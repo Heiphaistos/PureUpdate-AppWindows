@@ -15,13 +15,16 @@
     <Platforms>x64</Platforms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Optimize>true</Optimize>
-    <!-- Place PureUpdate.ico in Resources/ to enable the app icon -->
-    <!-- <ApplicationIcon>Resources\PureUpdate.ico</ApplicationIcon> -->
+    <ApplicationIcon>Resources\PureUpdate.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="WPF-UI" Version="3.0.5" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\PureUpdate.ico"/>
   </ItemGroup>
 
 </Project>
