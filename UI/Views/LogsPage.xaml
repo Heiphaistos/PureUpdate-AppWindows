@@ -1,0 +1,78 @@
+<Page
+    x:Class="PureUpdate.UI.Views.LogsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:PureUpdate.UI.ViewModels"
+    Background="Transparent"
+    Title="Journaux">
+
+    <Page.DataContext>
+        <vm:LogsViewModel/>
+    </Page.DataContext>
+
+    <Grid Margin="24,20,24,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="Journaux d'activité"
+                       FontSize="20" FontWeight="SemiBold"
+                       Foreground="#E0EEFF"
+                       VerticalAlignment="Center"/>
+            <ui:Button Content="Effacer"
+                       Command="{Binding ClearCommand}"
+                       Icon="{ui:SymbolIcon Delete24}"
+                       Margin="16,0,8,0"
+                       Padding="10,6"
+                       FontSize="12"/>
+            <ui:Button Content="Copier tout"
+                       Command="{Binding CopyAllCommand}"
+                       Icon="{ui:SymbolIcon Copy24}"
+                       Padding="10,6"
+                       FontSize="12"/>
+        </StackPanel>
+
+        <!-- Log list -->
+        <Border Grid.Row="1"
+                Background="#0A0F1A"
+                CornerRadius="10"
+                BorderBrush="#1E2A3A"
+                BorderThickness="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Padding="4">
+                <ItemsControl ItemsSource="{Binding Entries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="8,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="72"/>
+                                    <ColumnDefinition Width="48"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Timestamp, StringFormat='HH:mm:ss'}"
+                                           FontFamily="Consolas" FontSize="11"
+                                           Foreground="#405070" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding LevelText}"
+                                           FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                                           Foreground="{Binding LevelText, Converter={StaticResource LogLevelBrush}}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding Message}"
+                                           FontFamily="Consolas" FontSize="11"
+                                           Foreground="#B0C8E0"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Page>

@@ -1,0 +1,32 @@
+<Application
+    x:Class="PureUpdate.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:conv="clr-namespace:PureUpdate.UI.Converters"
+    StartupUri="UI/Views/MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Dark" />
+                <ui:ControlsDictionary />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters -->
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+            <conv:UpdateCountConverter x:Key="UpdateCountConv"/>
+            <conv:LogLevelToBrushConverter x:Key="LogLevelBrush"/>
+            <conv:BoolToBrushConverter x:Key="AdminBrush"
+                TrueBrush="#FF4CAF50" FalseBrush="#FFE53935"/>
+            <conv:BoolToBrushConverter x:Key="NetworkBrush"
+                TrueBrush="#FF4CAF50" FalseBrush="#FFE53935"/>
+
+            <!-- Brand colors -->
+            <Color x:Key="AccentBlue">#FF0078D4</Color>
+            <Color x:Key="ElectricCyan">#FF00B7FF</Color>
+            <SolidColorBrush x:Key="AccentBlueBrush"   Color="{StaticResource AccentBlue}"/>
+            <SolidColorBrush x:Key="ElectricCyanBrush" Color="{StaticResource ElectricCyan}"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
