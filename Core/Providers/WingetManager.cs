@@ -55,14 +55,36 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
             progress?.Report($"Installation: {item.Title}...");
             try
             {
-                var output = await RunAsync("winget",
-                    $"upgrade --id \"{item.Id}\" --silent --accept-package-agreements --accept-source-agreements",
+                var (output, exitCode) = await RunWithCodeAsync("winget",
+                    $"upgrade --id \"{item.Id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements",
                     progress, ct);
 
-                if (output.Contains("Successfully installed", StringComparison.OrdinalIgnoreCase) ||
-                    output.Contains("No applicable upgrade found", StringComparison.OrdinalIgnoreCase))
+                // 0x8A150006 = SHELLEXEC_INSTALL_FAILED : retry sans --silent (certains installateurs échouent en mode silencieux)
+                if (exitCode == -1978335226)
+                {
+                    Logger.Warn($"[Winget] {item.Title}: ShellExec échoué, retry sans --silent");
+                    (output, exitCode) = await RunWithCodeAsync("winget",
+                        $"upgrade --id \"{item.Id}\" --include-unknown --accept-package-agreements --accept-source-agreements",
+                        progress, ct);
+                }
+
+                // 0 = success, 3010 = success + reboot required
+                if (exitCode is 0 or 3010)
                     installed++;
-                else { failed++; errors.Add(item.Title); }
+                // 0x8A150013 / 0x8A150014 = MS Store bloqué par politique
+                else if (exitCode is -1978335213 or -1978335212)
+                {
+                    failed++;
+                    errors.Add($"{item.Title} (MS Store bloqué)");
+                    Logger.Warn($"[Winget] {item.Title}: bloqué par politique MS Store");
+                }
+                else
+                {
+                    failed++;
+                    errors.Add(item.Title);
+                    var detail = output.Split('\n').LastOrDefault(l => !string.IsNullOrWhiteSpace(l))?.Trim() ?? "";
+                    Logger.Warn($"[Winget] {item.Title}: exit {exitCode:X8}{(string.IsNullOrEmpty(detail) ? "" : $" — {detail}")}");
+                }
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex) { failed++; errors.Add(item.Title); Logger.Error($"[Winget] {item.Title}: {ex.Message}"); }
@@ -104,56 +126,66 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
     private List<UpdateItem> ParseUpgradeTable(string output)
     {
         var items = new List<UpdateItem>();
-        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        // Garder les lignes vides : elles délimitent les sections de tableaux
+        var lines = output.Split('\n');
 
-        int headerIdx = -1;
-        for (int i = 0; i < lines.Length; i++)
+        for (int h = 0; h < lines.Length; h++)
         {
-            var l = lines[i];
-            bool hasAvail = l.Contains("Available",  StringComparison.OrdinalIgnoreCase)
-                         || l.Contains("Disponible", StringComparison.OrdinalIgnoreCase);
-            bool hasVer   = l.Contains("Version",    StringComparison.OrdinalIgnoreCase);
-            bool hasId    = l.Contains("Id",         StringComparison.OrdinalIgnoreCase)
+            var l = lines[h];
+            bool hasAvail = l.Contains("Available",   StringComparison.OrdinalIgnoreCase)
+                         || l.Contains("Disponible",  StringComparison.OrdinalIgnoreCase);
+            bool hasVer   = l.Contains("Version",     StringComparison.OrdinalIgnoreCase);
+            bool hasId    = l.Contains("Id",          StringComparison.OrdinalIgnoreCase)
                          || l.Contains("Identifiant", StringComparison.OrdinalIgnoreCase);
-            if (hasAvail && hasVer && hasId) { headerIdx = i; break; }
-        }
-        if (headerIdx < 0 || headerIdx + 2 >= lines.Length)
-        {
-            Logger.Warn("[Winget] En-tête de tableau introuvable dans la sortie");
-            return items;
-        }
+            if (!hasAvail || !hasVer || !hasId) continue;
 
-        var (_, idPos, verPos, availPos, srcPos) = ParseWingetHeader(lines[headerIdx]);
-        if (idPos < 0 || verPos < 0 || availPos < 0) return items;
+            // Trouvé un en-tête → lire les positions de colonnes spécifiques à CE tableau
+            if (h + 2 >= lines.Length) continue;
+            var (_, idPos, verPos, availPos, srcPos) = ParseWingetHeader(lines[h]);
+            if (idPos < 0 || verPos < 0 || availPos < 0) continue;
 
-        for (int i = headerIdx + 2; i < lines.Length; i++)
-        {
-            var line = lines[i];
-            if (line.Length < verPos) continue;
-            if (line.TrimStart().StartsWith("upgrade", StringComparison.OrdinalIgnoreCase)) break;
-
-            try
+            // Parser les données jusqu'à la prochaine ligne vide (fin de section)
+            for (int i = h + 2; i < lines.Length; i++)
             {
-                string name      = idPos > 0 ? line[..idPos].Trim() : line.Trim();
-                string id        = verPos > idPos && line.Length >= verPos ? line[idPos..verPos].Trim() : name;
-                string version   = availPos > verPos && line.Length >= availPos ? line[verPos..availPos].Trim() : "";
-                string available = srcPos > availPos && line.Length >= srcPos
-                    ? line[availPos..srcPos].Trim()
-                    : line.Length > availPos ? line[availPos..].Trim() : "";
+                var line = lines[i];
 
-                if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id)) continue;
+                // Ligne vide = fin de cette section de tableau
+                if (string.IsNullOrWhiteSpace(line)) break;
+                if (line.Length < verPos) break;
+                if (line.TrimStart().StartsWith("upgrade", StringComparison.OrdinalIgnoreCase)) break;
 
-                items.Add(new UpdateItem
+                try
                 {
-                    Id               = id,
-                    Title            = name,
-                    Version          = version,
-                    AvailableVersion = available,
-                    Provider         = "Winget",
-                });
+                    string name      = idPos > 0 ? line[..idPos].Trim() : line.Trim();
+                    string id        = verPos > idPos && line.Length >= verPos ? line[idPos..verPos].Trim() : "";
+                    string version   = availPos > verPos && line.Length >= availPos ? line[verPos..availPos].Trim() : "";
+                    string available = srcPos > availPos && line.Length >= srcPos
+                        ? line[availPos..srcPos].Trim()
+                        : line.Length > availPos ? line[availPos..].Trim() : "";
+
+                    if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id)) continue;
+                    if (name.TrimStart().StartsWith('-') || id.TrimStart().StartsWith('-')) continue;
+                    if (id.Any(char.IsWhiteSpace)) continue;
+
+                    // Éviter les doublons entre tableaux
+                    if (items.Any(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase))) continue;
+
+                    items.Add(new UpdateItem
+                    {
+                        Id               = id,
+                        Title            = name,
+                        Version          = version,
+                        AvailableVersion = available,
+                        Provider         = "Winget",
+                    });
+                }
+                catch { }
             }
-            catch { }
         }
+
+        if (items.Count == 0)
+            Logger.Warn("[Winget] Aucun paquet détecté dans la sortie");
+
         return items;
     }
 

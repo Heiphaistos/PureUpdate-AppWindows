@@ -26,9 +26,19 @@ public partial class LogsViewModel : ObservableObject, IDisposable
     private readonly ChocoManager  _choco  = new();
     private readonly ScoopManager  _scoop  = new();
 
+    public bool HasLoadedOnce { get; private set; }
+
     public LogsViewModel()
     {
         Logger.OnLog += OnAppLog;
+    }
+
+    public void AutoLoadAsync()
+    {
+        HasLoadedOnce = true;
+        // Fire-and-forget volontaire : la page gère ses propres états de chargement
+        _ = LoadWuHistoryAsync();
+        _ = LoadPackagesAsync();
     }
 
     private void OnAppLog(LogEntry entry)

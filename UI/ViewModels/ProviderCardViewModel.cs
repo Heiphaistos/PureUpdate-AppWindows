@@ -97,8 +97,26 @@ public partial class ProviderCardViewModel : ObservableObject
         {
             var selected = Updates.Where(u => u.IsSelected).ToList();
             var result   = await _provider.InstallAsync(selected, progress, _cts.Token);
-            if (result.Success) Updates.Clear();
-            StatusText = result.Success ? $"{result.InstalledCount} installée(s)" : $"{result.FailedCount} erreur(s)";
+
+            if (result.Success)
+            {
+                Updates.Clear();
+                StatusText = $"{result.InstalledCount} installée(s)";
+            }
+            else
+            {
+                // Retirer de la liste les paquets installés avec succès
+                var failedTitles = new HashSet<string>(result.Errors ?? [], StringComparer.OrdinalIgnoreCase);
+                var toRemove = Updates.Where(u => u.IsSelected && !failedTitles.Any(f => f.StartsWith(u.Title, StringComparison.OrdinalIgnoreCase))).ToList();
+                foreach (var item in toRemove) Updates.Remove(item);
+
+                string details = result.Errors is { Count: > 0 }
+                    ? string.Join(", ", result.Errors)
+                    : "";
+                StatusText = result.InstalledCount > 0
+                    ? $"{result.InstalledCount} installée(s), {result.FailedCount} erreur(s) : {details}"
+                    : $"{result.FailedCount} erreur(s) : {details}";
+            }
         }
         catch (OperationCanceledException) { StatusText = "Annulé"; }
         catch (Exception ex) { Logger.Error($"[{Name}] Install: {ex.Message}"); StatusText = "Erreur"; }

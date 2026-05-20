@@ -121,6 +121,97 @@
                 </StackPanel>
             </ui:Card>
 
+            <!-- Personnalisation -->
+            <ui:Card Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Personnalisation"
+                               FontSize="15" FontWeight="SemiBold"
+                               Foreground="#E0EEFF" Margin="0,0,0,14"/>
+
+                    <!-- Couleur d'accentuation -->
+                    <TextBlock Text="Couleur d'accentuation"
+                               FontSize="12" FontWeight="SemiBold"
+                               Foreground="#8AACCC" Margin="0,0,0,10"/>
+                    <ListBox ItemsSource="{Binding AccentColorOptions}"
+                             SelectedItem="{Binding SelectedAccentColor}"
+                             Background="Transparent" BorderThickness="0"
+                             Margin="0,0,0,18">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin"  Value="0,0,10,0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Grid Width="38" Height="38" Cursor="Hand"
+                                                  ToolTip="{Binding Name}">
+                                                <Ellipse x:Name="Ring" Width="38" Height="38"
+                                                         Stroke="{Binding Brush}" StrokeThickness="2.5"
+                                                         Opacity="0"/>
+                                                <Ellipse Width="28" Height="28" Fill="{Binding Brush}"/>
+                                            </Grid>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Ring" Property="Opacity" Value="1"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+
+                    <Rectangle Height="1" Fill="#141E2E" Margin="0,0,0,14"/>
+
+                    <!-- Police d'interface -->
+                    <TextBlock Text="Police d'interface"
+                               FontSize="12" FontWeight="SemiBold"
+                               Foreground="#8AACCC" Margin="0,0,0,10"/>
+                    <ListBox ItemsSource="{Binding FontFamilies}"
+                             SelectedItem="{Binding SelectedFontFamily}"
+                             Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin"  Value="0,0,8,0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Bd" Background="#0A1825" CornerRadius="6"
+                                                    Padding="12,7" Cursor="Hand"
+                                                    BorderThickness="1" BorderBrush="#1A2840">
+                                                <TextBlock Text="{Binding}" FontFamily="{Binding}"
+                                                           FontSize="12" Foreground="#A0C0E0"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background"   Value="#120A2040"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush"  Value="{DynamicResource ElectricCyanBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#10FFFFFF"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+                </StackPanel>
+            </ui:Card>
+
             <!-- À propos -->
             <ui:Card>
                 <StackPanel>

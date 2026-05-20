@@ -44,6 +44,8 @@ public partial class App : Application
             mainWin.Closing += OnMainWindowClosing;
             MainWindow = mainWin;
 
+            PureUpdate.Core.Services.ThemeService.Apply(settings);
+
             if (settings.StartMinimized)
                 mainWin.WindowState = WindowState.Minimized;
 

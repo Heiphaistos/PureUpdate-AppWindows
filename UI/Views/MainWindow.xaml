@@ -30,7 +30,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#1A0078D4"/>
-                                <Setter Property="Foreground" Value="#00B7FF"/>
+                                <Setter Property="Foreground" Value="{DynamicResource ElectricCyanBrush}"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -46,13 +46,18 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="230"/>
+            <ColumnDefinition Width="270"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar -->
-        <Border Grid.Column="0" Background="#0C1220"
-                BorderBrush="#141E2E" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" BorderBrush="#1A2840" BorderThickness="0,0,1,0">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#0A1020" Offset="0"/>
+                    <GradientStop Color="#0D1628" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -61,33 +66,50 @@
                 </Grid.RowDefinitions>
 
                 <!-- Logo block -->
-                <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="12,28,12,20">
+                <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="16,28,16,18">
                     <Image Source="pack://application:,,,/Resources/PureUpdate.ico"
-                           Width="72" Height="72"
+                           Width="190" Height="190"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            HorizontalAlignment="Center">
+                        <!-- Fondu radial : le logo émerge du fond sans bordure visible -->
+                        <Image.OpacityMask>
+                            <RadialGradientBrush>
+                                <GradientStop Color="White"       Offset="0.50"/>
+                                <GradientStop Color="White"       Offset="0.62"/>
+                                <GradientStop Color="#99FFFFFF"   Offset="0.78"/>
+                                <GradientStop Color="Transparent" Offset="1.00"/>
+                            </RadialGradientBrush>
+                        </Image.OpacityMask>
                         <Image.Effect>
-                            <DropShadowEffect Color="#0078D4" BlurRadius="24"
-                                              ShadowDepth="0" Opacity="0.7"/>
+                            <DropShadowEffect Color="#0078D4" BlurRadius="55"
+                                              ShadowDepth="0" Opacity="0.9"/>
                         </Image.Effect>
                     </Image>
-                    <TextBlock Margin="0,10,0,0" HorizontalAlignment="Center">
-                        <Run Text="Pure" FontSize="20" FontWeight="Light"  Foreground="#90B0D4"/>
-                        <Run Text="Update" FontSize="20" FontWeight="Bold" Foreground="#00B7FF"/>
+                    <TextBlock Margin="0,8,0,0" HorizontalAlignment="Center">
+                        <Run Text="Pure"   FontSize="24" FontWeight="Light"  Foreground="#90B0D4"/>
+                        <Run Text="Update" FontSize="24" FontWeight="Bold"   Foreground="{DynamicResource ElectricCyanBrush}"/>
                     </TextBlock>
                     <TextBlock Text="Gestionnaire de mises à jour"
-                               FontSize="10" Foreground="#2E4A6A"
-                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
-                    <Rectangle Height="1" Fill="#141E2E" Margin="0,12,0,0"/>
+                               FontSize="11" Foreground="#2A4060"
+                               HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                    <Rectangle Height="1" Margin="0,16,0,0" Opacity="0.4">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="Transparent" Offset="0"/>
+                                <GradientStop Color="#1A2E50"     Offset="0.5"/>
+                                <GradientStop Color="Transparent" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
                 </StackPanel>
 
                 <!-- Nav -->
-                <StackPanel Grid.Row="1" Margin="12,4">
+                <StackPanel Grid.Row="1" Margin="14,8">
                     <RadioButton x:Name="BtnDashboard" Style="{StaticResource NavButtonStyle}"
                                  IsChecked="True" Checked="NavButton_Checked">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets"
-                                       FontSize="15" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                       FontSize="16" Margin="0,0,12,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Tableau de bord" VerticalAlignment="Center"/>
                         </StackPanel>
                     </RadioButton>
@@ -95,7 +117,7 @@
                                  Checked="NavButton_Checked">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets"
-                                       FontSize="15" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                       FontSize="16" Margin="0,0,12,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Historique" VerticalAlignment="Center"/>
                         </StackPanel>
                     </RadioButton>
@@ -103,17 +125,25 @@
                                  Checked="NavButton_Checked">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets"
-                                       FontSize="15" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                       FontSize="16" Margin="0,0,12,0" VerticalAlignment="Center"/>
                             <TextBlock Text="Paramètres" VerticalAlignment="Center"/>
                         </StackPanel>
                     </RadioButton>
                 </StackPanel>
 
                 <!-- Version footer -->
-                <StackPanel Grid.Row="2" Margin="12,0,12,14">
-                    <Rectangle Height="1" Fill="#141E2E" Margin="0,0,0,10"/>
+                <StackPanel Grid.Row="2" Margin="14,0,14,18">
+                    <Rectangle Height="1" Margin="0,0,0,12" Opacity="0.3">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="Transparent" Offset="0"/>
+                                <GradientStop Color="#1A2E50"     Offset="0.5"/>
+                                <GradientStop Color="Transparent" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
                     <TextBlock Text="v1.2.0  ·  Windows 10/11"
-                               FontSize="10" Opacity="0.35"
+                               FontSize="10.5" Opacity="0.3"
                                HorizontalAlignment="Center" Foreground="White"/>
                 </StackPanel>
             </Grid>

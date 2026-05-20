@@ -15,6 +15,21 @@ public abstract class CliProviderBase
         IProgress<string>? progress = null,
         CancellationToken ct = default)
     {
+        var (output, _) = await RunCoreAsync(exe, args, progress, ct);
+        return output;
+    }
+
+    protected static async Task<(string output, int exitCode)> RunWithCodeAsync(
+        string exe, string args,
+        IProgress<string>? progress = null,
+        CancellationToken ct = default)
+        => await RunCoreAsync(exe, args, progress, ct);
+
+    private static async Task<(string output, int exitCode)> RunCoreAsync(
+        string exe, string args,
+        IProgress<string>? progress,
+        CancellationToken ct)
+    {
         var psi = new ProcessStartInfo(exe, args)
         {
             RedirectStandardOutput = true,
@@ -55,7 +70,7 @@ public abstract class CliProviderBase
             try { process.Kill(entireProcessTree: true); } catch { }
             throw;
         }
-        return sb.ToString();
+        return (sb.ToString(), process.ExitCode);
     }
 
     protected static bool IsCommandAvailable(string command)
