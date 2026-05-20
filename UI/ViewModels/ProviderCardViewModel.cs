@@ -31,7 +31,8 @@ public partial class ProviderCardViewModel : ObservableObject
 
     public ObservableCollection<UpdateItem> Updates { get; } = [];
 
-    public int UpdateCount => Updates.Count;
+    public int  UpdateCount => Updates.Count;
+    public bool HasUpdates  => Updates.Count > 0;
 
     public ProviderCardViewModel(IUpdateProvider provider)
     {
@@ -40,7 +41,11 @@ public partial class ProviderCardViewModel : ObservableObject
         _isAvailable = provider.IsAvailable;
         AccentBrush  = HexToBrush(provider.AccentHex);
 
-        Updates.CollectionChanged += (_, _) => OnPropertyChanged(nameof(UpdateCount));
+        Updates.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(UpdateCount));
+            OnPropertyChanged(nameof(HasUpdates));
+        };
 
         StatusText = _isAvailable ? "Prêt" : "Non installé";
     }

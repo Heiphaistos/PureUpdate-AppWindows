@@ -118,6 +118,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <!-- Header: name + badge -->
@@ -167,10 +168,46 @@
                                              Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}"/>
                                 <TextBlock Grid.Row="4" Text="{Binding ProgressText}"
                                            FontSize="10" Foreground="#2E4060"
-                                           TextTrimming="CharacterEllipsis" Margin="0,0,0,10"/>
+                                           TextTrimming="CharacterEllipsis" Margin="0,0,0,6"/>
+
+                                <!-- Updates list — visible only when there are updates -->
+                                <Border Grid.Row="5" MaxHeight="160" Margin="0,0,0,10"
+                                        Visibility="{Binding HasUpdates, Converter={StaticResource BoolToVis}}">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding Updates}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                  VerticalAlignment="Center"
+                                                                  Margin="0,0,6,0"/>
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding Title}"
+                                                                   FontSize="11" Foreground="#90B0D0"
+                                                                   VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="2"
+                                                                   FontSize="10" Foreground="#406080"
+                                                                   Margin="8,0,0,0" VerticalAlignment="Center">
+                                                            <Run Text="{Binding Version, Mode=OneWay}"/>
+                                                            <Run Text="→"/>
+                                                            <Run Foreground="#5CB85C"
+                                                                 Text="{Binding AvailableVersion, Mode=OneWay}"/>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
 
                                 <!-- Buttons -->
-                                <WrapPanel Grid.Row="5">
+                                <WrapPanel Grid.Row="6">
                                     <ui:Button Content="Analyser"
                                                Command="{Binding ScanCommand}"
                                                IsEnabled="{Binding IsAvailable}"
