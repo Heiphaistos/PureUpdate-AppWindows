@@ -109,12 +109,19 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
         int headerIdx = -1;
         for (int i = 0; i < lines.Length; i++)
         {
-            if (lines[i].Contains("Available", StringComparison.OrdinalIgnoreCase) &&
-                lines[i].Contains("Version",   StringComparison.OrdinalIgnoreCase) &&
-                lines[i].Contains("Id",        StringComparison.OrdinalIgnoreCase))
-            { headerIdx = i; break; }
+            var l = lines[i];
+            bool hasAvail = l.Contains("Available",  StringComparison.OrdinalIgnoreCase)
+                         || l.Contains("Disponible", StringComparison.OrdinalIgnoreCase);
+            bool hasVer   = l.Contains("Version",    StringComparison.OrdinalIgnoreCase);
+            bool hasId    = l.Contains("Id",         StringComparison.OrdinalIgnoreCase)
+                         || l.Contains("Identifiant", StringComparison.OrdinalIgnoreCase);
+            if (hasAvail && hasVer && hasId) { headerIdx = i; break; }
         }
-        if (headerIdx < 0 || headerIdx + 2 >= lines.Length) return items;
+        if (headerIdx < 0 || headerIdx + 2 >= lines.Length)
+        {
+            Logger.Warn("[Winget] En-tête de tableau introuvable dans la sortie");
+            return items;
+        }
 
         var (_, idPos, verPos, availPos, srcPos) = ParseWingetHeader(lines[headerIdx]);
         if (idPos < 0 || verPos < 0 || availPos < 0) return items;
@@ -158,17 +165,18 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
         int headerIdx = -1;
         for (int i = 0; i < lines.Length; i++)
         {
-            if (lines[i].Contains("Name", StringComparison.OrdinalIgnoreCase) &&
-                lines[i].Contains("Version", StringComparison.OrdinalIgnoreCase))
-            { headerIdx = i; break; }
+            var l = lines[i];
+            bool hasName = l.Contains("Name", StringComparison.OrdinalIgnoreCase)
+                        || l.Contains("Nom",  StringComparison.OrdinalIgnoreCase);
+            bool hasVer  = l.Contains("Version", StringComparison.OrdinalIgnoreCase);
+            if (hasName && hasVer) { headerIdx = i; break; }
         }
         if (headerIdx < 0 || headerIdx + 2 >= lines.Length) return items;
 
         string header = lines[headerIdx];
-        int idPos  = header.IndexOf(" Id ",      StringComparison.OrdinalIgnoreCase);
-        int verPos = header.IndexOf(" Version ", StringComparison.OrdinalIgnoreCase);
-        if (idPos < 0) idPos = header.IndexOf("Id", StringComparison.OrdinalIgnoreCase);
-        if (verPos < 0) return items;
+        int idPos  = FirstValid(header, "Id", "Identifiant");
+        int verPos = IndexOfWord(header, "Version");
+        if (idPos < 0 || verPos < 0) return items;
 
         for (int i = headerIdx + 2; i < lines.Length; i++)
         {

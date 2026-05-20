@@ -15,6 +15,7 @@ public partial class MainWindow : Window
         ApplicationThemeManager.Apply(ApplicationTheme.Dark);
         _dashboard = new DashboardPage();
         MainFrame.Navigate(_dashboard);
+        Closed += (_, _) => _logs?.Dispose();
     }
 
     private void NavButton_Checked(object sender, RoutedEventArgs e)

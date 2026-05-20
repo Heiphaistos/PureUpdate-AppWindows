@@ -13,4 +13,6 @@ public partial class LogsPage : Page
         _vm = new LogsViewModel();
         DataContext = _vm;
     }
+
+    internal void Dispose() => _vm.Dispose();
 }

@@ -134,18 +134,32 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="12,10,12,6">
-                        <ui:Button Content="Charger l'historique"
-                                   Command="{Binding LoadWuHistoryCommand}"
-                                   Appearance="Primary"
-                                   Margin="0,0,12,0" Padding="12,6" FontSize="12"/>
-                        <TextBlock Text="{Binding WuStatus}"
-                                   FontSize="11.5" Foreground="#304060"
-                                   VerticalAlignment="Center"/>
-                        <ProgressBar IsIndeterminate="True" Width="80" Height="3"
-                                     Margin="10,0,0,0" VerticalAlignment="Center"
-                                     Visibility="{Binding IsLoadingWu, Converter={StaticResource BoolToVis}}"/>
-                    </StackPanel>
+                    <Grid Grid.Row="0" Margin="12,10,12,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:Button Content="Charger l'historique"
+                                       Command="{Binding LoadWuHistoryCommand}"
+                                       Appearance="Primary"
+                                       Margin="0,0,12,0" Padding="12,6" FontSize="12"/>
+                            <TextBlock Text="{Binding WuStatus}"
+                                       FontSize="11.5" Foreground="#304060"
+                                       VerticalAlignment="Center"/>
+                            <ProgressBar IsIndeterminate="True" Width="80" Height="3"
+                                         Margin="10,0,0,0" VerticalAlignment="Center"
+                                         Visibility="{Binding IsLoadingWu, Converter={StaticResource BoolToVis}}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <ui:Button Content="Exporter HTML"
+                                       Command="{Binding ExportHtmlCommand}"
+                                       Margin="0,0,6,0" Padding="10,5" FontSize="11"/>
+                            <ui:Button Content="Exporter CSV"
+                                       Command="{Binding ExportCsvCommand}"
+                                       Padding="10,5" FontSize="11"/>
+                        </StackPanel>
+                    </Grid>
 
                     <Border Grid.Row="1" Background="#060A12" Margin="8,0,8,8"
                             CornerRadius="8" BorderBrush="#141E2E" BorderThickness="1">

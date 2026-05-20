@@ -9,7 +9,7 @@ using PureUpdate.Utils;
 
 namespace PureUpdate.UI.ViewModels;
 
-public partial class LogsViewModel : ObservableObject
+public partial class LogsViewModel : ObservableObject, IDisposable
 {
     [ObservableProperty] private bool   _isLoadingWu;
     [ObservableProperty] private bool   _isLoadingPkgs;
@@ -69,11 +69,12 @@ public partial class LogsViewModel : ObservableObject
 
         try
         {
-            var (winget, choco, scoop) = await Task.WhenAll(
+            var results = await Task.WhenAll(
                 _winget.IsAvailable ? _winget.GetInstalledPackagesAsync(ct) : Task.FromResult(new List<HistoryItem>()),
                 _choco.IsAvailable  ? _choco.GetInstalledPackagesAsync(ct)  : Task.FromResult(new List<HistoryItem>()),
                 _scoop.IsAvailable  ? _scoop.GetInstalledPackagesAsync(ct)  : Task.FromResult(new List<HistoryItem>())
-            ).ContinueWith(t => (t.Result[0], t.Result[1], t.Result[2]), ct);
+            );
+            var (winget, choco, scoop) = (results[0], results[1], results[2]);
 
             foreach (var i in winget) WingetPackages.Add(i);
             foreach (var i in choco)  ChocoPackages.Add(i);
@@ -114,7 +115,7 @@ public partial class LogsViewModel : ObservableObject
         Clipboard.SetText(text);
     }
 
-    ~LogsViewModel()
+    public void Dispose()
     {
         Logger.OnLog -= OnAppLog;
     }

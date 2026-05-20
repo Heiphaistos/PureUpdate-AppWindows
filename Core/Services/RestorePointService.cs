@@ -28,9 +28,9 @@ public static class RestorePointService
                 };
 
                 using var p = Process.Start(psi) ?? throw new InvalidOperationException("Impossible de démarrer PowerShell");
-                p.WaitForExit(30_000);
+                bool exited = p.WaitForExit(30_000);
 
-                bool ok = p.ExitCode == 0;
+                bool ok = exited && p.ExitCode == 0;
                 Logger.Info($"[RestorePoint] {(ok ? "Créé avec succès" : $"Échec (exit {p.ExitCode})")}");
                 progress?.Report(ok ? "Point de restauration créé" : "Échec du point de restauration");
 

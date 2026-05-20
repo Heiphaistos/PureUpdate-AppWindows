@@ -45,8 +45,16 @@ public abstract class CliProviderBase
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-        // ConfigureAwait(false) évite le deadlock quand appelé via GetAwaiter().GetResult() depuis le dispatcher
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            // ConfigureAwait(false) évite le deadlock quand appelé via GetAwaiter().GetResult() depuis le dispatcher
+            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            try { process.Kill(entireProcessTree: true); } catch { }
+            throw;
+        }
         return sb.ToString();
     }
 
@@ -77,14 +85,24 @@ public abstract class CliProviderBase
         ParseWingetHeader(string header)
     {
         int name      = 0;
-        int id        = IndexOfWord(header, "Id");
+        int id        = FirstValid(header, "Id", "Identifiant");
         int version   = IndexOfWord(header, "Version");
-        int available = IndexOfWord(header, "Available");
+        int available = FirstValid(header, "Available", "Disponible");
         int source    = IndexOfWord(header, "Source");
         return (name, id, version, available, source);
     }
 
-    private static int IndexOfWord(string line, string word)
+    protected static int FirstValid(string line, params string[] words)
+    {
+        foreach (var w in words)
+        {
+            int pos = IndexOfWord(line, w);
+            if (pos >= 0) return pos;
+        }
+        return -1;
+    }
+
+    protected static int IndexOfWord(string line, string word)
     {
         int idx = 0;
         while (idx < line.Length)

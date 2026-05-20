@@ -39,9 +39,14 @@ public partial class App : Application
 
         try
         {
-            var mainWin = new MainWindow();
+            var settings = AppSettingsService.Load();
+            var mainWin  = new MainWindow();
             mainWin.Closing += OnMainWindowClosing;
             MainWindow = mainWin;
+
+            if (settings.StartMinimized)
+                mainWin.WindowState = WindowState.Minimized;
+
             mainWin.Show();
         }
         catch (Exception ex)

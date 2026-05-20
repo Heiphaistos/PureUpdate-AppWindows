@@ -42,9 +42,6 @@ public static class SchedulerService
         {
             try
             {
-                // Create folder
-                RunSilent($"/Create /F /TN \"{TaskFolder}\" /XML nul 2>nul");
-
                 var args = $"/Create /F /SC {schedule} /TN \"{TaskName}\" " +
                            $"/TR \"\\\"{exePath}\\\" --scan\" /ST {startTime} " +
                            "/RL HIGHEST /RU SYSTEM";
@@ -88,17 +85,4 @@ public static class SchedulerService
         });
     }
 
-    private static void RunSilent(string args)
-    {
-        try
-        {
-            using var p = Process.Start(new ProcessStartInfo("schtasks.exe", args)
-            {
-                CreateNoWindow  = true,
-                UseShellExecute = false,
-            });
-            p?.WaitForExit(3000);
-        }
-        catch { }
-    }
 }
