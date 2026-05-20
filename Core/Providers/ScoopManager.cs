@@ -20,13 +20,13 @@ public sealed class ScoopManager : CliProviderBase, IUpdateProvider, ISelfManage
 
     private static bool CheckScoopAvailable()
     {
-        try
-        {
-            var result = RunPs("scoop --version").GetAwaiter().GetResult();
-            return result.Contains("Scoop", StringComparison.OrdinalIgnoreCase) ||
-                   result.Contains("version", StringComparison.OrdinalIgnoreCase);
-        }
-        catch { return false; }
+        // Filesystem check — rapide, pas de processus, pas de deadlock
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var scoopEnv    = Environment.GetEnvironmentVariable("SCOOP", EnvironmentVariableTarget.User)
+                         ?? Path.Combine(userProfile, "scoop");
+        return File.Exists(Path.Combine(scoopEnv, "shims", "scoop.cmd"))
+            || File.Exists(Path.Combine(scoopEnv, "shims", "scoop.ps1"))
+            || File.Exists(Path.Combine(userProfile, "scoop", "shims", "scoop.cmd"));
     }
 
     // --- IUpdateProvider ---

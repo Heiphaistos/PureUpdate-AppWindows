@@ -39,8 +39,6 @@ public partial class DashboardViewModel : ObservableObject
         IsNetworkAvailable = PrivilegeHelper.IsNetworkAvailable();
         IsRebootRequired   = RebootRequiredService.IsRebootRequired();
         HealthScore.Update(0, IsRebootRequired);
-
-        Logger.Info($"Admin={IsAdmin} | Réseau={IsNetworkAvailable} | SDI={SdiAvailable} | Reboot={IsRebootRequired}");
     }
 
     [RelayCommand]

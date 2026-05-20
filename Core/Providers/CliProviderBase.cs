@@ -45,7 +45,8 @@ public abstract class CliProviderBase
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-        await process.WaitForExitAsync(ct);
+        // ConfigureAwait(false) évite le deadlock quand appelé via GetAwaiter().GetResult() depuis le dispatcher
+        await process.WaitForExitAsync(ct).ConfigureAwait(false);
         return sb.ToString();
     }
 
