@@ -6,13 +6,15 @@ public interface IUpdateProvider
 {
     string Name        { get; }
     string Description { get; }
-    string Icon        { get; }
-    bool IsAvailable   { get; }
+    string AccentHex   { get; }
+    bool   IsAvailable { get; }
+
+    bool CheckAvailability();
 
     Task<List<UpdateItem>> ScanAsync(CancellationToken ct = default);
 
     Task<UpdateResult> InstallAsync(
-        List<UpdateItem> items,
+        List<UpdateItem>   items,
         IProgress<string>? progress = null,
-        CancellationToken ct = default);
+        CancellationToken  ct       = default);
 }

@@ -6,9 +6,17 @@ namespace PureUpdate.Core.Providers;
 public sealed class WindowsUpdateManager : IUpdateProvider
 {
     public string Name        => "Windows Update";
-    public string Description => "Mises à jour du système via WUAPI";
-    public string Icon        => "";
-    public bool IsAvailable   => true;
+    public string Description => "Mises à jour système via WUAPI";
+    public string AccentHex   => "#0078D4";
+
+    private bool _isAvailable = true;
+    public bool IsAvailable => _isAvailable;
+
+    public bool CheckAvailability()
+    {
+        _isAvailable = Type.GetTypeFromProgID("Microsoft.Update.Session") is not null;
+        return _isAvailable;
+    }
 
     public async Task<List<UpdateItem>> ScanAsync(CancellationToken ct = default)
     {
@@ -18,102 +26,84 @@ public sealed class WindowsUpdateManager : IUpdateProvider
             try
             {
                 var sessionType = Type.GetTypeFromProgID("Microsoft.Update.Session")
-                    ?? throw new InvalidOperationException("WUAPI introuvable sur ce système");
+                    ?? throw new InvalidOperationException("WUAPI introuvable");
 
                 dynamic session  = Activator.CreateInstance(sessionType)!;
                 dynamic searcher = session.CreateUpdateSearcher();
                 searcher.Online  = true;
 
-                Logger.Info("[WindowsUpdate] Recherche en cours...");
+                Logger.Info("[WindowsUpdate] Scan en cours...");
                 dynamic result = searcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0");
 
                 for (int i = 0; i < result.Updates.Count; i++)
                 {
                     ct.ThrowIfCancellationRequested();
                     dynamic u = result.Updates.Item(i);
-
                     items.Add(new UpdateItem
                     {
-                        Id       = (string)u.Identity.UpdateID,
-                        Title    = (string)u.Title,
-                        Provider = Name,
+                        Id        = (string)u.Identity.UpdateID,
+                        Title     = (string)u.Title,
+                        Provider  = Name,
                         SizeBytes = (long)u.MaxDownloadSize,
                         Severity  = ParseSeverity((string?)u.MsrcSeverity),
                     });
                 }
-                Logger.Info($"[WindowsUpdate] {items.Count} mises à jour trouvées");
+                Logger.Info($"[WindowsUpdate] {items.Count} mise(s) à jour trouvée(s)");
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception ex)
-            {
-                Logger.Error($"[WindowsUpdate] Scan échoué: {ex.Message}");
-            }
+            catch (Exception ex) { Logger.Error($"[WindowsUpdate] Scan: {ex.Message}"); }
             return items;
         }, ct);
     }
 
     public async Task<UpdateResult> InstallAsync(
-        List<UpdateItem> items,
+        List<UpdateItem>   items,
         IProgress<string>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken  ct       = default)
     {
         return await Task.Run(() =>
         {
-            int installed = 0;
-            int failed    = 0;
-            var errors    = new List<string>();
-
+            int installed = 0, failed = 0;
+            var errors = new List<string>();
             try
             {
                 var sessionType = Type.GetTypeFromProgID("Microsoft.Update.Session")!;
                 dynamic session = Activator.CreateInstance(sessionType)!;
+                var collType    = Type.GetTypeFromProgID("Microsoft.Update.UpdateColl")!;
+                dynamic coll    = Activator.CreateInstance(collType)!;
 
-                var collType = Type.GetTypeFromProgID("Microsoft.Update.UpdateColl")!;
-                dynamic updateColl = Activator.CreateInstance(collType)!;
+                dynamic searcher = session.CreateUpdateSearcher();
+                searcher.Online  = true;
+                dynamic sr       = searcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0");
 
-                var searcher = session.CreateUpdateSearcher();
-                searcher.Online = true;
-                dynamic searchResult = searcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0");
-
-                for (int i = 0; i < searchResult.Updates.Count; i++)
+                for (int i = 0; i < sr.Updates.Count; i++)
                 {
-                    dynamic u = searchResult.Updates.Item(i);
+                    dynamic u = sr.Updates.Item(i);
                     if (items.Any(x => x.Id == (string)u.Identity.UpdateID))
-                        updateColl.Add(u);
+                        coll.Add(u);
                 }
-
-                if (updateColl.Count == 0)
-                    return new UpdateResult(true, "Aucune mise à jour à installer");
+                if (coll.Count == 0) return new UpdateResult(true, "Rien à installer");
 
                 progress?.Report("Téléchargement...");
-                dynamic downloader = session.CreateUpdateDownloader();
-                downloader.Updates = updateColl;
-                downloader.Download();
+                dynamic dl = session.CreateUpdateDownloader();
+                dl.Updates = coll;
+                dl.Download();
 
                 progress?.Report("Installation...");
-                dynamic installer = session.CreateUpdateInstaller();
-                installer.Updates = updateColl;
-                dynamic installResult = installer.Install();
+                dynamic inst = session.CreateUpdateInstaller();
+                inst.Updates = coll;
+                dynamic ir   = inst.Install();
 
-                for (int i = 0; i < updateColl.Count; i++)
+                for (int i = 0; i < coll.Count; i++)
                 {
                     ct.ThrowIfCancellationRequested();
-                    dynamic itemResult = installResult.GetUpdateResult(i);
-                    if ((int)itemResult.ResultCode == 2)
-                        installed++;
-                    else
-                    {
-                        failed++;
-                        errors.Add($"{(string)updateColl.Item(i).Title}: code {itemResult.HResult}");
-                    }
+                    dynamic r = ir.GetUpdateResult(i);
+                    if ((int)r.ResultCode == 2) installed++;
+                    else { failed++; errors.Add($"{(string)coll.Item(i).Title}"); }
                 }
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception ex)
-            {
-                Logger.Error($"[WindowsUpdate] Install échoué: {ex.Message}");
-                return new UpdateResult(false, ex.Message, installed, failed + 1, errors);
-            }
+            catch (Exception ex) { Logger.Error($"[WindowsUpdate] Install: {ex.Message}"); return new UpdateResult(false, ex.Message); }
 
             return new UpdateResult(failed == 0, $"{installed} installées, {failed} erreurs", installed, failed, errors);
         }, ct);

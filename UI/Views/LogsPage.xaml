@@ -4,75 +4,353 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:PureUpdate.UI.ViewModels"
-    Background="Transparent"
-    Title="Journaux">
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
+    Background="Transparent">
 
-    <Page.DataContext>
-        <vm:LogsViewModel/>
-    </Page.DataContext>
+    <Page.Resources>
+        <Style x:Key="ColHeader" TargetType="TextBlock">
+            <Setter Property="FontSize"     Value="10.5"/>
+            <Setter Property="FontWeight"   Value="SemiBold"/>
+            <Setter Property="Foreground"   Value="#243850"/>
+            <Setter Property="Margin"       Value="0,0,0,6"/>
+        </Style>
 
-    <Grid Margin="24,20,24,24">
+        <!-- Template for HistoryItem rows -->
+        <DataTemplate x:Key="HistoryRowTemplate">
+            <Grid Margin="6,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="100"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           FontFamily="Consolas" FontSize="11" Foreground="#304A6A"
+                           VerticalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Text" Value="{Binding Date, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Date}" Value="{x:Static system:DateTime.MinValue}">
+                                    <Setter Property="Text" Value="—"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Version}" FontFamily="Consolas" FontSize="11"
+                           Foreground="#4060A0" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding Title}" FontSize="11.5"
+                           Foreground="#90B4D8" TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center"/>
+                <Border Grid.Column="3" CornerRadius="4" Padding="5,2"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Margin="0,0,4,0">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="#1AFF4040"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSuccess}" Value="True">
+                                    <Setter Property="Background" Value="#1A40FF80"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding StatusLabel}" FontSize="9.5" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#FF6060"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSuccess}" Value="True">
+                                        <Setter Property="Foreground" Value="#50D080"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Template for installed package rows (no date/status) -->
+        <DataTemplate x:Key="PackageRowTemplate">
+            <Grid Margin="6,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding Title}"
+                           FontSize="12" Foreground="#90B4D8"
+                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding Id}"
+                           FontFamily="Consolas" FontSize="10.5" Foreground="#304060"
+                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Text="{Binding Version}"
+                           FontFamily="Consolas" FontSize="10.5" Foreground="#4A6A90"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid Margin="24,16,24,24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Toolbar -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
-            <TextBlock Text="Journaux d'activité"
-                       FontSize="20" FontWeight="SemiBold"
-                       Foreground="#E0EEFF"
-                       VerticalAlignment="Center"/>
-            <ui:Button Content="Effacer"
-                       Command="{Binding ClearCommand}"
-                       Icon="{ui:SymbolIcon Delete24}"
-                       Margin="16,0,8,0"
-                       Padding="10,6"
-                       FontSize="12"/>
-            <ui:Button Content="Copier tout"
-                       Command="{Binding CopyAllCommand}"
-                       Icon="{ui:SymbolIcon Copy24}"
-                       Padding="10,6"
-                       FontSize="12"/>
-        </StackPanel>
+        <!-- Title -->
+        <TextBlock Grid.Row="0" Text="Historique &amp; Paquets"
+                   FontSize="21" FontWeight="SemiBold"
+                   Foreground="#C0D8F0" Margin="0,0,0,14"/>
 
-        <!-- Log list -->
-        <Border Grid.Row="1"
-                Background="#0A0F1A"
-                CornerRadius="10"
-                BorderBrush="#1E2A3A"
-                BorderThickness="1">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          Padding="4">
-                <ItemsControl ItemsSource="{Binding Entries}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="8,2">
+        <!-- Tabs -->
+        <TabControl Grid.Row="1"
+                    Background="#080D18"
+                    BorderBrush="#141E2E"
+                    Padding="0">
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Foreground"  Value="#4A6A90"/>
+                    <Setter Property="FontSize"    Value="12.5"/>
+                    <Setter Property="Padding"     Value="14,8"/>
+                    <Setter Property="Background"  Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Foreground" Value="#00B7FF"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </TabControl.Resources>
+
+            <!-- ═══ Windows Update History ═══ -->
+            <TabItem Header="🪟 Windows Update">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="12,10,12,6">
+                        <ui:Button Content="Charger l'historique"
+                                   Command="{Binding LoadWuHistoryCommand}"
+                                   Appearance="Primary"
+                                   Margin="0,0,12,0" Padding="12,6" FontSize="12"/>
+                        <TextBlock Text="{Binding WuStatus}"
+                                   FontSize="11.5" Foreground="#304060"
+                                   VerticalAlignment="Center"/>
+                        <ProgressBar IsIndeterminate="True" Width="80" Height="3"
+                                     Margin="10,0,0,0" VerticalAlignment="Center"
+                                     Visibility="{Binding IsLoadingWu, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Background="#060A12" Margin="8,0,8,8"
+                            CornerRadius="8" BorderBrush="#141E2E" BorderThickness="1">
+                        <!-- Column headers -->
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="12,8,12,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="72"/>
-                                    <ColumnDefinition Width="48"/>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding Timestamp, StringFormat='HH:mm:ss'}"
-                                           FontFamily="Consolas" FontSize="11"
-                                           Foreground="#405070" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding LevelText}"
-                                           FontFamily="Consolas" FontSize="11" FontWeight="Bold"
-                                           Foreground="{Binding LevelText, Converter={StaticResource LogLevelBrush}}"
-                                           VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2"
-                                           Text="{Binding Message}"
-                                           FontFamily="Consolas" FontSize="11"
-                                           Foreground="#B0C8E0"
-                                           TextWrapping="Wrap"
-                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="Date"      Style="{StaticResource ColHeader}"/>
+                                <TextBlock Grid.Column="1" Text="Version"   Style="{StaticResource ColHeader}"/>
+                                <TextBlock Grid.Column="2" Text="Mise à jour" Style="{StaticResource ColHeader}"/>
+                                <TextBlock Grid.Column="3" Text="Statut"    Style="{StaticResource ColHeader}" HorizontalAlignment="Right"/>
                             </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-        </Border>
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="6,2">
+                                <ItemsControl ItemsSource="{Binding WuHistory}"
+                                              ItemTemplate="{StaticResource HistoryRowTemplate}"
+                                              VirtualizingPanel.IsVirtualizing="True"
+                                              VirtualizingPanel.VirtualizationMode="Recycling">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <VirtualizingStackPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ═══ Winget packages ═══ -->
+            <TabItem Header="📦 Winget">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="12,10,12,6">
+                        <ui:Button Content="Charger les paquets"
+                                   Command="{Binding LoadPackagesCommand}"
+                                   Appearance="Primary"
+                                   Margin="0,0,12,0" Padding="12,6" FontSize="12"/>
+                        <TextBlock Text="{Binding PkgsStatus}"
+                                   FontSize="11.5" Foreground="#304060" VerticalAlignment="Center"/>
+                        <ProgressBar IsIndeterminate="True" Width="80" Height="3"
+                                     Margin="10,0,0,0" VerticalAlignment="Center"
+                                     Visibility="{Binding IsLoadingPkgs, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                    <Border Grid.Row="1" Background="#060A12" Margin="8,0,8,8"
+                            CornerRadius="8" BorderBrush="#141E2E" BorderThickness="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="12,8,12,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="80"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Nom"       Style="{StaticResource ColHeader}"/>
+                                <TextBlock Grid.Column="1" Text="ID"        Style="{StaticResource ColHeader}"/>
+                                <TextBlock Grid.Column="2" Text="Version"   Style="{StaticResource ColHeader}"/>
+                            </Grid>
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="6,2">
+                                <ItemsControl ItemsSource="{Binding WingetPackages}"
+                                              ItemTemplate="{StaticResource PackageRowTemplate}"
+                                              VirtualizingPanel.IsVirtualizing="True"
+                                              VirtualizingPanel.VirtualizationMode="Recycling">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ═══ Chocolatey packages ═══ -->
+            <TabItem Header="🍫 Chocolatey">
+                <Border Background="#060A12" Margin="8" CornerRadius="8"
+                        BorderBrush="#141E2E" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0" Margin="12,8,12,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="80"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Nom"     Style="{StaticResource ColHeader}"/>
+                            <TextBlock Grid.Column="1" Text="ID"      Style="{StaticResource ColHeader}"/>
+                            <TextBlock Grid.Column="2" Text="Version" Style="{StaticResource ColHeader}"/>
+                        </Grid>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="6,2">
+                            <ItemsControl ItemsSource="{Binding ChocoPackages}"
+                                          ItemTemplate="{StaticResource PackageRowTemplate}"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- ═══ Scoop packages ═══ -->
+            <TabItem Header="🪣 Scoop">
+                <Border Background="#060A12" Margin="8" CornerRadius="8"
+                        BorderBrush="#141E2E" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0" Margin="12,8,12,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="80"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Nom"     Style="{StaticResource ColHeader}"/>
+                            <TextBlock Grid.Column="1" Text="ID"      Style="{StaticResource ColHeader}"/>
+                            <TextBlock Grid.Column="2" Text="Version" Style="{StaticResource ColHeader}"/>
+                        </Grid>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="6,2">
+                            <ItemsControl ItemsSource="{Binding ScoopPackages}"
+                                          ItemTemplate="{StaticResource PackageRowTemplate}"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- ═══ App activity ═══ -->
+            <TabItem Header="📋 Activité app">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="12,10,12,6">
+                        <ui:Button Content="Effacer" Command="{Binding ClearAppLogsCommand}"
+                                   Margin="0,0,8,0" Padding="10,5" FontSize="12"/>
+                        <ui:Button Content="Copier tout" Command="{Binding CopyAllAppLogsCommand}"
+                                   Padding="10,5" FontSize="12"/>
+                    </StackPanel>
+                    <Border Grid.Row="1" Background="#04070E" Margin="8,0,8,8"
+                            CornerRadius="8" BorderBrush="#141E2E" BorderThickness="1">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                            <ItemsControl ItemsSource="{Binding AppLogs}"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="4,1">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="68"/>
+                                                <ColumnDefinition Width="48"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding Timestamp, StringFormat=HH:mm:ss}"
+                                                       FontFamily="Consolas" FontSize="11"
+                                                       Foreground="#243040"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding LevelText}"
+                                                       FontFamily="Consolas" FontSize="11" FontWeight="Bold"
+                                                       Foreground="{Binding LevelText, Converter={StaticResource LogLevelBrush}}"/>
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding Message}"
+                                                       FontFamily="Consolas" FontSize="11"
+                                                       Foreground="#6090B8" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </Grid>
+
 </Page>

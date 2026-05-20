@@ -1,8 +1,16 @@
 using System.Windows.Controls;
+using PureUpdate.UI.ViewModels;
 
 namespace PureUpdate.UI.Views;
 
 public partial class LogsPage : Page
 {
-    public LogsPage() => InitializeComponent();
+    private readonly LogsViewModel _vm;
+
+    public LogsPage()
+    {
+        InitializeComponent();
+        _vm = new LogsViewModel();
+        DataContext = _vm;
+    }
 }

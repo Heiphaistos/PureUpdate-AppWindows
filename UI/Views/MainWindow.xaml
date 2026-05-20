@@ -3,45 +3,39 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    xmlns:views="clr-namespace:PureUpdate.UI.Views"
     Title="PureUpdate — Gestionnaire de mises à jour"
-    Width="1280"
-    Height="820"
-    MinWidth="960"
-    MinHeight="600"
+    Width="1340" Height="840"
+    MinWidth="1000" MinHeight="640"
     WindowStartupLocation="CenterScreen"
-    Background="#0F1520">
+    Background="#090E1A">
 
     <Window.Resources>
         <Style x:Key="NavButtonStyle" TargetType="RadioButton">
-            <Setter Property="Background"     Value="Transparent"/>
-            <Setter Property="BorderBrush"    Value="Transparent"/>
-            <Setter Property="Foreground"     Value="#A0B4D0"/>
-            <Setter Property="FontSize"       Value="14"/>
-            <Setter Property="Padding"        Value="12,10"/>
-            <Setter Property="Margin"         Value="0,2"/>
-            <Setter Property="Cursor"         Value="Hand"/>
+            <Setter Property="Background"                 Value="Transparent"/>
+            <Setter Property="BorderBrush"                Value="Transparent"/>
+            <Setter Property="Foreground"                 Value="#6080A0"/>
+            <Setter Property="FontSize"                   Value="13.5"/>
+            <Setter Property="Padding"                    Value="14,11"/>
+            <Setter Property="Margin"                     Value="0,2"/>
+            <Setter Property="Cursor"                     Value="Hand"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="8"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter
-                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="Center"/>
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="9" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#22008FFF"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#1A0078D4"/>
                                 <Setter Property="Foreground" Value="#00B7FF"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#14FFFFFF"/>
-                                <Setter Property="Foreground" Value="#D0E8FF"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#10FFFFFF"/>
+                                <Setter Property="Foreground" Value="#C0D8F0"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -52,15 +46,13 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="230"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Sidebar -->
-        <Border Grid.Column="0"
-                Background="#1A1A2A"
-                BorderBrush="#2A2A3F"
-                BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="#0C1220"
+                BorderBrush="#141E2E" BorderThickness="0,0,1,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -68,50 +60,67 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Logo + Title -->
-                <StackPanel Grid.Row="0" Margin="16,32,16,24">
-                    <TextBlock Text="Pure"
-                               FontSize="22"
-                               FontWeight="Light"
-                               Foreground="#B0C8FF"/>
-                    <TextBlock Text="Update"
-                               FontSize="22"
-                               FontWeight="Bold"
-                               Foreground="#00B7FF"
-                               Margin="0,-6,0,4"/>
-                    <Rectangle Height="1" Fill="#2A2A3F" Margin="0,8,0,0"/>
+                <!-- Logo block -->
+                <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="12,28,12,20">
+                    <Image Source="pack://application:,,,/Resources/PureUpdate.ico"
+                           Width="72" Height="72"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           HorizontalAlignment="Center">
+                        <Image.Effect>
+                            <DropShadowEffect Color="#0078D4" BlurRadius="24"
+                                              ShadowDepth="0" Opacity="0.7"/>
+                        </Image.Effect>
+                    </Image>
+                    <TextBlock Margin="0,10,0,0" HorizontalAlignment="Center">
+                        <Run Text="Pure" FontSize="20" FontWeight="Light"  Foreground="#90B0D4"/>
+                        <Run Text="Update" FontSize="20" FontWeight="Bold" Foreground="#00B7FF"/>
+                    </TextBlock>
+                    <TextBlock Text="Gestionnaire de mises à jour"
+                               FontSize="10" Foreground="#2E4A6A"
+                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                    <Rectangle Height="1" Fill="#141E2E" Margin="0,12,0,0"/>
                 </StackPanel>
 
-                <!-- Navigation -->
-                <StackPanel Grid.Row="1" Margin="12,0">
-                    <RadioButton x:Name="BtnDashboard"
-                                 Content="  Tableau de bord"
-                                 Style="{StaticResource NavButtonStyle}"
-                                 IsChecked="True"
-                                 Checked="NavButton_Checked"/>
-                    <RadioButton x:Name="BtnLogs"
-                                 Content="  Journaux"
-                                 Style="{StaticResource NavButtonStyle}"
-                                 Checked="NavButton_Checked"/>
-                    <RadioButton x:Name="BtnSettings"
-                                 Content="  Paramètres"
-                                 Style="{StaticResource NavButtonStyle}"
-                                 Checked="NavButton_Checked"/>
+                <!-- Nav -->
+                <StackPanel Grid.Row="1" Margin="12,4">
+                    <RadioButton x:Name="BtnDashboard" Style="{StaticResource NavButtonStyle}"
+                                 IsChecked="True" Checked="NavButton_Checked">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets"
+                                       FontSize="15" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Tableau de bord" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="BtnLogs" Style="{StaticResource NavButtonStyle}"
+                                 Checked="NavButton_Checked">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets"
+                                       FontSize="15" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Historique" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="BtnSettings" Style="{StaticResource NavButtonStyle}"
+                                 Checked="NavButton_Checked">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets"
+                                       FontSize="15" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Paramètres" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                 </StackPanel>
 
-                <!-- Version -->
-                <TextBlock Grid.Row="2"
-                           Text="v1.0.0"
-                           FontSize="11"
-                           Opacity="0.4"
-                           Margin="16,0,16,16"
-                           HorizontalAlignment="Center"/>
+                <!-- Version footer -->
+                <StackPanel Grid.Row="2" Margin="12,0,12,14">
+                    <Rectangle Height="1" Fill="#141E2E" Margin="0,0,0,10"/>
+                    <TextBlock Text="v1.1.0  ·  Windows 10/11"
+                               FontSize="10" Opacity="0.35"
+                               HorizontalAlignment="Center" Foreground="White"/>
+                </StackPanel>
             </Grid>
         </Border>
 
         <!-- Content Frame -->
-        <Frame x:Name="MainFrame"
-               Grid.Column="1"
+        <Frame x:Name="MainFrame" Grid.Column="1"
                NavigationUIVisibility="Hidden"
                Background="Transparent"/>
     </Grid>

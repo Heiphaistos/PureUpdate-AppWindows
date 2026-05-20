@@ -3,79 +3,162 @@ using PureUpdate.Utils;
 
 namespace PureUpdate.Core.Providers;
 
-public sealed class ScoopManager : CliProviderBase, IUpdateProvider
+public sealed class ScoopManager : CliProviderBase, IUpdateProvider, ISelfManagedProvider
 {
     public string Name        => "Scoop";
     public string Description => "Gestionnaire de paquets Scoop";
-    public string Icon        => "";
-    public bool IsAvailable   => IsCommandAvailable("scoop");
+    public string AccentHex   => "#5CB85C";
+
+    private bool? _available;
+    public bool IsAvailable => _available ??= CheckScoopAvailable();
+
+    public bool CheckAvailability()
+    {
+        _available = CheckScoopAvailable();
+        return _available.Value;
+    }
+
+    private static bool CheckScoopAvailable()
+    {
+        try
+        {
+            var result = RunPs("scoop --version").GetAwaiter().GetResult();
+            return result.Contains("Scoop", StringComparison.OrdinalIgnoreCase) ||
+                   result.Contains("version", StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
+    }
+
+    // --- IUpdateProvider ---
 
     public async Task<List<UpdateItem>> ScanAsync(CancellationToken ct = default)
     {
         var items = new List<UpdateItem>();
         if (!IsAvailable) return items;
 
-        Logger.Info("[Scoop] Recherche des mises à jour...");
-
+        Logger.Info("[Scoop] Scan des mises à jour...");
         try
         {
-            await RunAsync("scoop", "update", ct: ct);
-            var output = await RunAsync("scoop", "status", ct: ct);
+            await RunPs("scoop update", ct: ct);
+            var output = await RunPs("scoop status", ct: ct);
             items = ParseScoopStatus(output);
-            Logger.Info($"[Scoop] {items.Count} mises à jour trouvées");
+            Logger.Info($"[Scoop] {items.Count} mise(s) à jour détectée(s)");
         }
         catch (OperationCanceledException) { throw; }
-        catch (Exception ex) { Logger.Error($"[Scoop] Scan échoué: {ex.Message}"); }
-
+        catch (Exception ex) { Logger.Error($"[Scoop] Scan: {ex.Message}"); }
         return items;
     }
 
     public async Task<UpdateResult> InstallAsync(
-        List<UpdateItem> items,
+        List<UpdateItem>   items,
         IProgress<string>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken  ct       = default)
     {
-        if (!IsAvailable)
-            return new UpdateResult(false, "Scoop non disponible");
+        if (!IsAvailable) return new UpdateResult(false, "Scoop non disponible");
 
         progress?.Report("Mise à jour de tous les paquets Scoop...");
+        try
+        {
+            var output = await RunPs("scoop update *", progress, ct);
+            Logger.Info("[Scoop] Update terminé");
+            return new UpdateResult(true, "Mise à jour réussie", items.Count(i => i.IsSelected));
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) { Logger.Error($"[Scoop] Install: {ex.Message}"); return new UpdateResult(false, ex.Message); }
+    }
+
+    // --- ISelfManagedProvider ---
+
+    public bool CanInstallSelf   => !IsAvailable;
+    public bool CanUninstallSelf => IsAvailable;
+
+    public async Task<bool> InstallSelfAsync(IProgress<string>? progress, CancellationToken ct)
+    {
+        progress?.Report("Installation de Scoop...");
+        Logger.Info("[Scoop] Auto-installation...");
+        try
+        {
+            var script = "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; " +
+                         "Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression";
+            var output = await RunAsync("powershell.exe",
+                $"-NoProfile -NonInteractive -Command \"{script}\"", progress, ct);
+
+            _available = null;
+            bool ok = IsAvailable;
+            Logger.Info($"[Scoop] Installation: {(ok ? "OK" : "Échec")}");
+            return ok;
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) { Logger.Error($"[Scoop] InstallSelf: {ex.Message}"); return false; }
+    }
+
+    public async Task<bool> UninstallSelfAsync(IProgress<string>? progress, CancellationToken ct)
+    {
+        progress?.Report("Désinstallation de Scoop...");
+        Logger.Info("[Scoop] Auto-désinstallation...");
+        try
+        {
+            await RunPs("scoop uninstall scoop", progress, ct);
+            _available = null;
+            Logger.Info("[Scoop] Désinstallation terminée");
+            return true;
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) { Logger.Error($"[Scoop] UninstallSelf: {ex.Message}"); return false; }
+    }
+
+    public async Task<List<HistoryItem>> GetInstalledPackagesAsync(CancellationToken ct = default)
+    {
+        var items = new List<HistoryItem>();
+        if (!IsAvailable) return items;
 
         try
         {
-            var output = await RunAsync("scoop", "update *", progress, ct);
-            Logger.Info("[Scoop] Mise à jour terminée");
-            return new UpdateResult(true, "Mise à jour Scoop réussie", items.Count(i => i.IsSelected));
+            var output = await RunPs("scoop list", ct: ct);
+            items = ParseScoopList(output);
+            Logger.Info($"[Scoop] {items.Count} paquets installés");
         }
         catch (OperationCanceledException) { throw; }
-        catch (Exception ex)
-        {
-            Logger.Error($"[Scoop] Install échoué: {ex.Message}");
-            return new UpdateResult(false, ex.Message);
-        }
+        catch (Exception ex) { Logger.Error($"[Scoop] GetInstalled: {ex.Message}"); }
+        return items;
     }
+
+    // --- Helpers ---
+
+    private static Task<string> RunPs(string cmd,
+        IProgress<string>? progress = null, CancellationToken ct = default)
+        => RunAsync("powershell.exe",
+            $"-NoProfile -NonInteractive -Command \"{cmd}\"",
+            progress, ct);
 
     private static List<UpdateItem> ParseScoopStatus(string output)
     {
         var items = new List<UpdateItem>();
         var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        bool inTable = false;
 
-        foreach (var line in lines)
+        int headerIdx = -1;
+        for (int i = 0; i < lines.Length; i++)
         {
-            if (line.TrimStart().StartsWith("Name", StringComparison.OrdinalIgnoreCase) &&
-                line.Contains("Installed Version", StringComparison.OrdinalIgnoreCase))
-            {
-                inTable = true;
-                continue;
-            }
-            if (!inTable || line.TrimStart().StartsWith("---")) continue;
+            if (lines[i].Contains("Latest", StringComparison.OrdinalIgnoreCase) &&
+                lines[i].Contains("Installed", StringComparison.OrdinalIgnoreCase))
+            { headerIdx = i; break; }
+        }
+        if (headerIdx < 0) return items;
 
-            var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 2) continue;
+        string header  = lines[headerIdx];
+        int instCol    = header.IndexOf("Installed", StringComparison.OrdinalIgnoreCase);
+        int latestCol  = header.IndexOf("Latest",    StringComparison.OrdinalIgnoreCase);
+        if (instCol < 0 || latestCol < 0) return items;
 
-            string name      = parts[0];
-            string installed = parts.Length > 1 ? parts[1] : string.Empty;
-            string latest    = parts.Length > 2 ? parts[2] : string.Empty;
+        for (int i = headerIdx + 2; i < lines.Length; i++)
+        {
+            var line = lines[i];
+            if (line.TrimStart().StartsWith("---")) continue;
+            if (line.Length < latestCol) continue;
+
+            string name    = instCol > 0 ? line[..instCol].Trim() : line.Trim();
+            string version = latestCol > instCol && line.Length >= latestCol ? line[instCol..latestCol].Trim() : "";
+            string latest  = line.Length > latestCol ? line[latestCol..].Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "" : "";
 
             if (string.IsNullOrWhiteSpace(name)) continue;
 
@@ -83,12 +166,53 @@ public sealed class ScoopManager : CliProviderBase, IUpdateProvider
             {
                 Id               = name,
                 Title            = name,
-                Version          = installed,
+                Version          = version,
                 AvailableVersion = latest,
                 Provider         = "Scoop",
             });
         }
+        return items;
+    }
 
+    private static List<HistoryItem> ParseScoopList(string output)
+    {
+        var items = new List<HistoryItem>();
+        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+        int headerIdx = -1;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].Contains("Version", StringComparison.OrdinalIgnoreCase) &&
+                lines[i].TrimStart().StartsWith("Name", StringComparison.OrdinalIgnoreCase))
+            { headerIdx = i; break; }
+        }
+        if (headerIdx < 0) return items;
+
+        string header = lines[headerIdx];
+        int verCol = header.IndexOf("Version", StringComparison.OrdinalIgnoreCase);
+        if (verCol < 0) return items;
+
+        for (int i = headerIdx + 2; i < lines.Length; i++)
+        {
+            var line = lines[i];
+            if (line.TrimStart().StartsWith("---")) continue;
+            if (line.Length < verCol) continue;
+
+            string name    = line[..verCol].Trim();
+            string version = line.Length > verCol ? line[verCol..].Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "" : "";
+
+            if (string.IsNullOrWhiteSpace(name)) continue;
+
+            items.Add(new HistoryItem
+            {
+                Title    = name,
+                Id       = name,
+                Version  = version,
+                Provider = "Scoop",
+                Status   = HistoryStatus.Success,
+                Date     = DateTime.MinValue,
+            });
+        }
         return items;
     }
 }
