@@ -1,4 +1,8 @@
 using System.Windows;
+using System.Windows.Media.Imaging;
+using Hardcodet.Wpf.TaskbarNotification;
+using PureUpdate.Core.Services;
+using PureUpdate.UI.Views;
 using PureUpdate.Utils;
 using Wpf.Ui.Appearance;
 
@@ -6,6 +10,10 @@ namespace PureUpdate;
 
 public partial class App : Application
 {
+    public static bool ForceExit { get; set; }
+
+    private TaskbarIcon? _trayIcon;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -14,6 +22,16 @@ public partial class App : Application
         Logger.Initialize(logDir);
 
         ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+
+        _trayIcon = BuildTrayIcon();
+
+        NotificationService.UpdatesFound      += OnUpdatesFound;
+        NotificationService.RebootRequired    += OnRebootRequired;
+        NotificationService.RestorePointCreated += OnRestorePointCreated;
+
+        var mainWin = new MainWindow();
+        mainWin.Closing += OnMainWindowClosing;
+        MainWindow = mainWin;
 
         if (!PrivilegeHelper.IsRunningAsAdministrator())
         {
@@ -25,10 +43,90 @@ public partial class App : Application
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }
+
+        mainWin.Show();
+    }
+
+    private TaskbarIcon BuildTrayIcon()
+    {
+        var icon = new TaskbarIcon
+        {
+            IconSource    = new BitmapImage(new Uri("pack://application:,,,/Resources/PureUpdate.ico")),
+            ToolTipText   = "PureUpdate — Gestionnaire de mises à jour",
+            Visibility    = Visibility.Visible,
+        };
+
+        var menu = new ContextMenu();
+
+        var openItem = new MenuItem { Header = "Ouvrir PureUpdate" };
+        openItem.Click += (_, _) => ShowMainWindow();
+        menu.Items.Add(openItem);
+        menu.Items.Add(new Separator());
+
+        var exitItem = new MenuItem { Header = "Quitter" };
+        exitItem.Click += (_, _) => { ForceExit = true; Shutdown(); };
+        menu.Items.Add(exitItem);
+
+        icon.ContextMenu             = menu;
+        icon.TrayMouseDoubleClick   += (_, _) => ShowMainWindow();
+
+        return icon;
+    }
+
+    private void ShowMainWindow()
+    {
+        if (MainWindow is null) return;
+        MainWindow.Show();
+        MainWindow.WindowState = WindowState.Normal;
+        MainWindow.Activate();
+    }
+
+    private void OnMainWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (ForceExit) return;
+        var settings = AppSettingsService.Load();
+        if (settings.CloseToTray && sender is Window win)
+        {
+            e.Cancel = true;
+            win.Hide();
+            _trayIcon?.ShowBalloonTip(
+                "PureUpdate",
+                "L'application est réduite dans la barre système.",
+                BalloonIcon.Info);
+        }
+    }
+
+    private void OnUpdatesFound(int count)
+    {
+        _trayIcon?.ShowBalloonTip(
+            "PureUpdate",
+            $"{count} mise(s) à jour disponible(s) !",
+            BalloonIcon.Info);
+    }
+
+    private void OnRebootRequired()
+    {
+        _trayIcon?.ShowBalloonTip(
+            "PureUpdate",
+            "Un redémarrage est requis pour finaliser les mises à jour.",
+            BalloonIcon.Warning);
+    }
+
+    private void OnRestorePointCreated(string msg)
+    {
+        _trayIcon?.ShowBalloonTip(
+            "PureUpdate",
+            $"Point de restauration créé : {msg}",
+            BalloonIcon.Info);
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        NotificationService.UpdatesFound       -= OnUpdatesFound;
+        NotificationService.RebootRequired     -= OnRebootRequired;
+        NotificationService.RestorePointCreated -= OnRestorePointCreated;
+
+        _trayIcon?.Dispose();
         Logger.Shutdown();
         base.OnExit(e);
     }

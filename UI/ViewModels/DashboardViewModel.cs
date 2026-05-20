@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PureUpdate.Core.Offline;
 using PureUpdate.Core.Providers;
+using PureUpdate.Core.Services;
 using PureUpdate.Utils;
 
 namespace PureUpdate.UI.ViewModels;
@@ -15,10 +16,12 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private bool   _isInstallingAll;
     [ObservableProperty] private bool   _isAdmin;
     [ObservableProperty] private bool   _isNetworkAvailable;
+    [ObservableProperty] private bool   _isRebootRequired;
     [ObservableProperty] private string _globalStatus = "Prêt";
     [ObservableProperty] private string _sdiStatus    = string.Empty;
     [ObservableProperty] private bool   _sdiAvailable;
 
+    public HealthScoreViewModel HealthScore { get; } = new();
     public ObservableCollection<ProviderCardViewModel> Providers { get; } = [];
 
     public DashboardViewModel()
@@ -32,10 +35,12 @@ public partial class DashboardViewModel : ObservableObject
         Providers.Add(new ProviderCardViewModel(new ChocoManager()));
         Providers.Add(new ProviderCardViewModel(new ScoopManager()));
 
-        IsAdmin             = PrivilegeHelper.IsRunningAsAdministrator();
-        IsNetworkAvailable  = PrivilegeHelper.IsNetworkAvailable();
+        IsAdmin            = PrivilegeHelper.IsRunningAsAdministrator();
+        IsNetworkAvailable = PrivilegeHelper.IsNetworkAvailable();
+        IsRebootRequired   = RebootRequiredService.IsRebootRequired();
+        HealthScore.Update(0, IsRebootRequired);
 
-        Logger.Info($"Admin={IsAdmin} | Réseau={IsNetworkAvailable} | SDI={SdiAvailable}");
+        Logger.Info($"Admin={IsAdmin} | Réseau={IsNetworkAvailable} | SDI={SdiAvailable} | Reboot={IsRebootRequired}");
     }
 
     [RelayCommand]
@@ -51,10 +56,16 @@ public partial class DashboardViewModel : ObservableObject
                     .Where(p => p.IsAvailable)
                     .Select(p => p.ScanAsync(ct)));
 
-            int total = Providers.Sum(p => p.UpdateCount);
+            int total    = Providers.Sum(p => p.UpdateCount);
+            IsRebootRequired = RebootRequiredService.IsRebootRequired();
+            HealthScore.Update(total, IsRebootRequired);
+
             GlobalStatus = total > 0
                 ? $"{total} mise(s) à jour trouvée(s) au total"
                 : "Tous les paquets sont à jour";
+
+            if (total > 0)        NotificationService.NotifyUpdatesFound(total);
+            if (IsRebootRequired) NotificationService.NotifyRebootRequired();
         }
         catch (OperationCanceledException)
         {
@@ -71,17 +82,29 @@ public partial class DashboardViewModel : ObservableObject
     private async Task InstallAllAsync(CancellationToken ct)
     {
         IsInstallingAll = true;
-        GlobalStatus    = "Installation en cours...";
+        GlobalStatus    = "Préparation de l'installation...";
 
         try
         {
+            var settings = AppSettingsService.Load();
+            if (settings.AutoRestorePoint)
+            {
+                var prog = new Progress<string>(msg => GlobalStatus = msg);
+                await RestorePointService.CreateAsync(progress: prog, ct: ct);
+            }
+
+            GlobalStatus = "Installation en cours...";
             foreach (var provider in Providers.Where(p => p.IsAvailable && p.UpdateCount > 0))
             {
                 ct.ThrowIfCancellationRequested();
                 await provider.InstallAsync(ct);
             }
 
+            IsRebootRequired = RebootRequiredService.IsRebootRequired();
+            HealthScore.Update(Providers.Sum(p => p.UpdateCount), IsRebootRequired);
             GlobalStatus = "Toutes les mises à jour ont été installées";
+
+            if (IsRebootRequired) NotificationService.NotifyRebootRequired();
         }
         catch (OperationCanceledException)
         {
@@ -96,7 +119,7 @@ public partial class DashboardViewModel : ObservableObject
     private bool CanInstallAll() => !IsInstallingAll && Providers.Any(p => p.UpdateCount > 0);
 
     [RelayCommand]
-    private async Task RunSdiAsync(IProgress<string>? progress = null, CancellationToken ct = default)
+    private async Task RunSdiAsync(CancellationToken ct = default)
     {
         if (!SdiAvailable) return;
         SdiStatus = "Lancement de SDI...";

@@ -7,19 +7,104 @@
     Title="Paramètres">
 
     <ScrollViewer Margin="24,20,24,24" VerticalScrollBarVisibility="Auto">
-        <StackPanel MaxWidth="700" HorizontalAlignment="Left">
+        <StackPanel MaxWidth="720" HorizontalAlignment="Left">
 
             <TextBlock Text="Paramètres"
                        FontSize="24" FontWeight="SemiBold"
                        Foreground="#E0EEFF" Margin="0,0,0,24"/>
 
-            <!-- Nettoyage système -->
-            <ui:Card Margin="0,0,0,16">
+            <!-- Analyse automatique -->
+            <ui:Card Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Analyse automatique planifiée"
+                               FontSize="15" FontWeight="SemiBold"
+                               Foreground="#E0EEFF" Margin="0,0,0,4"/>
+                    <TextBlock FontSize="12" Foreground="#5070A0" TextWrapping="Wrap" Margin="0,0,0,12">
+                        Planifie une analyse automatique via le Planificateur de tâches Windows (droits admin requis).
+                    </TextBlock>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Planification actuelle : " FontSize="12" Foreground="#5070A0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ScanScheduleDisplay}" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="#00B7FF" VerticalAlignment="Center"/>
+                        <Border CornerRadius="4" Padding="6,2" Margin="12,0,0,0"
+                                Background="#0A3A1A"
+                                Visibility="{Binding TaskExists, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="ACTIF" FontSize="9.5" FontWeight="Bold" Foreground="#4CAF50"/>
+                        </Border>
+                    </StackPanel>
+
+                    <WrapPanel Margin="0,0,0,8">
+                        <ui:Button Content="Désactivé"
+                                   Command="{Binding SetScheduleCommand}"
+                                   CommandParameter="Disabled"
+                                   Margin="0,0,8,0" FontSize="11.5" Padding="12,6"/>
+                        <ui:Button Content="Quotidien (09:00)"
+                                   Command="{Binding SetScheduleCommand}"
+                                   CommandParameter="Daily"
+                                   Margin="0,0,8,0" FontSize="11.5" Padding="12,6"/>
+                        <ui:Button Content="Hebdomadaire (09:00)"
+                                   Command="{Binding SetScheduleCommand}"
+                                   CommandParameter="Weekly"
+                                   FontSize="11.5" Padding="12,6"/>
+                    </WrapPanel>
+
+                    <ProgressBar IsIndeterminate="True" Height="2" Margin="0,0,0,6"
+                                 Visibility="{Binding IsApplyingSchedule, Converter={StaticResource BoolToVis}}"/>
+
+                    <TextBlock Text="{Binding SchedulerStatus}"
+                               FontSize="11" Foreground="#4070A0" Margin="0,2,0,0"/>
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Options -->
+            <ui:Card Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="Options de comportement"
+                               FontSize="15" FontWeight="SemiBold"
+                               Foreground="#E0EEFF" Margin="0,0,0,14"/>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Fermer dans la barre système"
+                                       FontSize="13" Foreground="#C0D8F0"/>
+                            <TextBlock Text="Réduit l'application dans la zone de notification au lieu de la fermer."
+                                       FontSize="11" Foreground="#4A6A8A" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}"
+                                         VerticalAlignment="Center" Margin="16,0,0,0"/>
+                    </Grid>
+
+                    <Rectangle Height="1" Fill="#141E2E" Margin="0,0,0,12"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Point de restauration avant installation"
+                                       FontSize="13" Foreground="#C0D8F0"/>
+                            <TextBlock Text="Crée automatiquement un point de restauration système avant d'installer des mises à jour."
+                                       FontSize="11" Foreground="#4A6A8A" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoRestorePoint}"
+                                         VerticalAlignment="Center" Margin="16,0,0,0"/>
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Cache cleanup -->
+            <ui:Card Margin="0,0,0,14">
                 <StackPanel>
                     <TextBlock Text="Nettoyage du cache Windows"
                                FontSize="15" FontWeight="SemiBold"
                                Foreground="#E0EEFF" Margin="0,0,0,6"/>
-                    <TextBlock Text="Supprime le contenu de SoftwareDistribution\Download et les fichiers temporaires système après les mises à jour."
+                    <TextBlock Text="Supprime le contenu de SoftwareDistribution\Download et les fichiers temporaires système."
                                FontSize="12" Foreground="#5070A0"
                                TextWrapping="Wrap" Margin="0,0,0,12"/>
                     <ui:Button x:Name="BtnCleanCache"
@@ -41,10 +126,10 @@
                 <StackPanel>
                     <TextBlock Text="À propos de PureUpdate"
                                FontSize="15" FontWeight="SemiBold"
-                               Foreground="#E0EEFF" Margin="0,0,0,8"/>
+                               Foreground="#E0EEFF" Margin="0,0,0,10"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="140"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -52,15 +137,18 @@
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
+                            <RowDefinition/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Version" Foreground="#405070" FontSize="12"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="1.0.0" Foreground="#A0C0E0" FontSize="12"/>
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Framework" Foreground="#405070" FontSize="12" Margin="0,4,0,0"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text=".NET 8.0 + WPF-UI (Fluent Design)" Foreground="#A0C0E0" FontSize="12" Margin="0,4,0,0"/>
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Compatibilité" Foreground="#405070" FontSize="12" Margin="0,4,0,0"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows 10 / 11 (x64)" Foreground="#A0C0E0" FontSize="12" Margin="0,4,0,0"/>
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Licence" Foreground="#405070" FontSize="12" Margin="0,4,0,0"/>
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="MIT" Foreground="#A0C0E0" FontSize="12" Margin="0,4,0,0"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="1.2.0" Foreground="#00B7FF" FontSize="12" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Framework" Foreground="#405070" FontSize="12" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text=".NET 8.0 + WPF-UI (Fluent Design)" Foreground="#A0C0E0" FontSize="12" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Compatibilité" Foreground="#405070" FontSize="12" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows 10 / 11 (x64)" Foreground="#A0C0E0" FontSize="12" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Sources" Foreground="#405070" FontSize="12" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="Windows Update · Winget · Chocolatey · Scoop" Foreground="#A0C0E0" FontSize="12" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Licence" Foreground="#405070" FontSize="12" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="MIT" Foreground="#A0C0E0" FontSize="12" Margin="0,5,0,0"/>
                     </Grid>
                 </StackPanel>
             </ui:Card>

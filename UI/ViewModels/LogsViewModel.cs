@@ -87,6 +87,20 @@ public partial class LogsViewModel : ObservableObject
         finally { IsLoadingPkgs = false; }
     }
 
+    // --- Export ---
+
+    [RelayCommand]
+    private async Task ExportHtmlAsync()
+    {
+        await ExportService.ExportToHtmlAsync(WuHistory, "PureUpdate — Historique Windows Update");
+    }
+
+    [RelayCommand]
+    private async Task ExportCsvAsync()
+    {
+        await ExportService.ExportToCsvAsync(WuHistory);
+    }
+
     // --- App logs ---
 
     [RelayCommand]
@@ -95,6 +109,7 @@ public partial class LogsViewModel : ObservableObject
     [RelayCommand]
     private void CopyAllAppLogs()
     {
+        if (AppLogs.Count == 0) return;
         var text = string.Join(Environment.NewLine, AppLogs.Select(e => e.Display));
         Clipboard.SetText(text);
     }

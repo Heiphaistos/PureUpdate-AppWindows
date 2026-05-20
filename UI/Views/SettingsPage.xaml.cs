@@ -1,12 +1,17 @@
 using System.Windows;
 using System.Windows.Controls;
+using PureUpdate.UI.ViewModels;
 using PureUpdate.Utils;
 
 namespace PureUpdate.UI.Views;
 
 public partial class SettingsPage : Page
 {
-    public SettingsPage() => InitializeComponent();
+    public SettingsPage()
+    {
+        InitializeComponent();
+        DataContext = new SettingsViewModel();
+    }
 
     private async void BtnCleanCache_Click(object sender, RoutedEventArgs e)
     {
@@ -23,14 +28,12 @@ public partial class SettingsPage : Page
     private static int CleanWindowsCache()
     {
         int count = 0;
-
         var dirs = new[]
         {
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
                 "SoftwareDistribution", "Download"),
-            Path.Combine(Path.GetTempPath()),
+            Path.GetTempPath(),
         };
-
         foreach (var dir in dirs)
         {
             if (!Directory.Exists(dir)) continue;
@@ -40,8 +43,7 @@ public partial class SettingsPage : Page
                 catch { }
             }
         }
-
-        Logger.Info($"[Settings] Cache nettoyé: {count} fichier(s) supprimé(s)");
+        Logger.Info($"[Settings] Cache nettoyé: {count} fichier(s)");
         return count;
     }
 }
