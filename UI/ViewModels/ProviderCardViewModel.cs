@@ -14,9 +14,17 @@ public partial class ProviderCardViewModel : ObservableObject
     private readonly ISelfManagedProvider? _selfManaged;
     private CancellationTokenSource?       _cts;
 
-    [ObservableProperty] private bool   _isScanning;
-    [ObservableProperty] private bool   _isInstalling;
-    [ObservableProperty] private bool   _isManaging;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsActive))]
+    private bool _isScanning;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsActive))]
+    private bool _isInstalling;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsActive))]
+    private bool _isManaging;
     [ObservableProperty] private string _statusText   = "Prêt";
     [ObservableProperty] private string _progressText = string.Empty;
     [ObservableProperty] private bool   _isAvailable;
@@ -31,8 +39,10 @@ public partial class ProviderCardViewModel : ObservableObject
 
     public ObservableCollection<UpdateItem> Updates { get; } = [];
 
-    public int  UpdateCount => Updates.Count;
-    public bool HasUpdates  => Updates.Count > 0;
+    public int  UpdateCount  => Updates.Count;
+    public int  ManualCount  => Updates.Count(u => u.Status == UpdateStatus.ManualRequired);
+    public bool HasUpdates   => Updates.Count > 0;
+    public bool IsActive     => IsScanning || IsInstalling || IsManaging;
 
     public ProviderCardViewModel(IUpdateProvider provider)
     {
@@ -44,6 +54,7 @@ public partial class ProviderCardViewModel : ObservableObject
         Updates.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(UpdateCount));
+            OnPropertyChanged(nameof(ManualCount));
             OnPropertyChanged(nameof(HasUpdates));
         };
 
@@ -98,24 +109,41 @@ public partial class ProviderCardViewModel : ObservableObject
             var selected = Updates.Where(u => u.IsSelected).ToList();
             var result   = await _provider.InstallAsync(selected, progress, _cts.Token);
 
-            if (result.Success)
+            if (result.Success && result.ManualCount == 0)
             {
                 Updates.Clear();
                 StatusText = $"{result.InstalledCount} installée(s)";
             }
             else
             {
-                // Retirer de la liste les paquets installés avec succès
-                var failedTitles = new HashSet<string>(result.Errors ?? [], StringComparer.OrdinalIgnoreCase);
-                var toRemove = Updates.Where(u => u.IsSelected && !failedTitles.Any(f => f.StartsWith(u.Title, StringComparison.OrdinalIgnoreCase))).ToList();
+                // Titres des échecs (erreurs + manuels) à garder dans la liste
+                var failedTitles = new HashSet<string>(result.Errors       ?? [], StringComparer.OrdinalIgnoreCase);
+                var manualTitles = new HashSet<string>(result.ManualErrors ?? [], StringComparer.OrdinalIgnoreCase);
+
+                // Retirer les paquets installés avec succès
+                var toRemove = Updates
+                    .Where(u => u.IsSelected
+                             && !failedTitles.Any(f => f.StartsWith(u.Title, StringComparison.OrdinalIgnoreCase))
+                             && !manualTitles.Any(m => m.StartsWith(u.Title, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
                 foreach (var item in toRemove) Updates.Remove(item);
 
-                string details = result.Errors is { Count: > 0 }
-                    ? string.Join(", ", result.Errors)
-                    : "";
-                StatusText = result.InstalledCount > 0
-                    ? $"{result.InstalledCount} installée(s), {result.FailedCount} erreur(s) : {details}"
-                    : $"{result.FailedCount} erreur(s) : {details}";
+                // Marquer les items qui nécessitent une installation manuelle
+                foreach (var item in Updates.Where(u =>
+                    manualTitles.Any(m => m.StartsWith(u.Title, StringComparison.OrdinalIgnoreCase))))
+                    item.Status = UpdateStatus.ManualRequired;
+
+                OnPropertyChanged(nameof(ManualCount));
+
+                // Construire un status text lisible
+                var parts = new List<string>();
+                if (result.InstalledCount > 0)
+                    parts.Add($"{result.InstalledCount} installée(s)");
+                if (result.ManualCount > 0)
+                    parts.Add($"{result.ManualCount} manuelle(s) requise(s) : {string.Join(", ", result.ManualErrors!)}");
+                if (result.FailedCount > 0)
+                    parts.Add($"{result.FailedCount} erreur(s) : {string.Join(", ", result.Errors!)}");
+                StatusText = parts.Count > 0 ? string.Join(" · ", parts) : "Terminé";
             }
         }
         catch (OperationCanceledException) { StatusText = "Annulé"; }

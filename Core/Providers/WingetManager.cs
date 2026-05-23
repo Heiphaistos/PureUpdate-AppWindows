@@ -39,6 +39,22 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
         return items;
     }
 
+    // Exit codes Winget indiquant qu'une installation manuelle est requise
+    private static readonly HashSet<int> _manualRequiredCodes = new()
+    {
+        -1978335166, // UNSUPPORTED_INSTALLER_TYPE (pas de mode silencieux possible)
+        -1978335132, // SYSTEM_NOT_SUPPORTED
+        -1978335157, // INSTALL_BLOCKED_BY_POLICY
+        -1978335154, // INSTALL_CONTACT_SUPPORT
+    };
+
+    private static bool IsManualRequired(int exitCode, string output) =>
+        _manualRequiredCodes.Contains(exitCode)
+        || output.Contains("InteractiveInstall",        StringComparison.OrdinalIgnoreCase)
+        || output.Contains("requires user interaction", StringComparison.OrdinalIgnoreCase)
+        || output.Contains("cannot be installed silently", StringComparison.OrdinalIgnoreCase)
+        || output.Contains("manual",                    StringComparison.OrdinalIgnoreCase);
+
     public async Task<UpdateResult> InstallAsync(
         List<UpdateItem>   items,
         IProgress<string>? progress = null,
@@ -46,8 +62,9 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
     {
         if (!IsAvailable) return new UpdateResult(false, "Winget non disponible");
 
-        int installed = 0, failed = 0;
-        var errors = new List<string>();
+        int installed = 0, failed = 0, manual = 0;
+        var errors       = new List<string>();
+        var manualErrors = new List<string>();
 
         foreach (var item in items.Where(i => i.IsSelected))
         {
@@ -59,7 +76,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                     $"upgrade --id \"{item.Id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements",
                     progress, ct);
 
-                // 0x8A150006 = SHELLEXEC_INSTALL_FAILED : retry sans --silent (certains installateurs échouent en mode silencieux)
+                // 0x8A150006 = SHELLEXEC_INSTALL_FAILED : retry sans --silent
                 if (exitCode == -1978335226)
                 {
                     Logger.Warn($"[Winget] {item.Title}: ShellExec échoué, retry sans --silent");
@@ -68,15 +85,22 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                         progress, ct);
                 }
 
-                // 0 = success, 3010 = success + reboot required
                 if (exitCode is 0 or 3010)
+                {
                     installed++;
-                // 0x8A150013 / 0x8A150014 = MS Store bloqué par politique
+                }
                 else if (exitCode is -1978335213 or -1978335212)
                 {
-                    failed++;
-                    errors.Add($"{item.Title} (MS Store bloqué)");
-                    Logger.Warn($"[Winget] {item.Title}: bloqué par politique MS Store");
+                    // MS Store bloqué par politique → manuel requis
+                    manual++;
+                    manualErrors.Add($"{item.Title} (MS Store bloqué)");
+                    Logger.Warn($"[Winget] {item.Title}: bloqué par politique MS Store — installation manuelle requise");
+                }
+                else if (IsManualRequired(exitCode, output))
+                {
+                    manual++;
+                    manualErrors.Add(item.Title);
+                    Logger.Warn($"[Winget] {item.Title}: exit {exitCode:X8} — installation manuelle requise");
                 }
                 else
                 {
@@ -90,7 +114,10 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
             catch (Exception ex) { failed++; errors.Add(item.Title); Logger.Error($"[Winget] {item.Title}: {ex.Message}"); }
         }
 
-        return new UpdateResult(failed == 0, $"{installed} installées, {failed} erreurs", installed, failed, errors);
+        return new UpdateResult(
+            failed == 0,
+            $"{installed} installées, {manual} manuelles, {failed} erreurs",
+            installed, failed, errors, manual, manualErrors);
     }
 
     // --- ISelfManagedProvider ---

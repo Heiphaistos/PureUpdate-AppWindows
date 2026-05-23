@@ -1,7 +1,7 @@
 namespace PureUpdate.Core.Models;
 
 public enum UpdateSeverity { Unknown, Low, Moderate, Important, Critical }
-public enum UpdateStatus   { Pending, Downloading, Installing, Installed, Failed }
+public enum UpdateStatus   { Pending, Downloading, Installing, Installed, Failed, ManualRequired }
 
 public sealed class UpdateItem
 {

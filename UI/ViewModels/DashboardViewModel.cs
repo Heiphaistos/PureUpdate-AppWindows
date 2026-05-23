@@ -55,8 +55,9 @@ public partial class DashboardViewModel : ObservableObject
                     .Select(p => p.ScanAsync(ct)));
 
             int total    = Providers.Sum(p => p.UpdateCount);
+            int manual   = Providers.Sum(p => p.ManualCount);
             IsRebootRequired = RebootRequiredService.IsRebootRequired();
-            HealthScore.Update(total, IsRebootRequired);
+            HealthScore.Update(total - manual, IsRebootRequired);
 
             GlobalStatus = total > 0
                 ? $"{total} mise(s) à jour trouvée(s) au total"
@@ -99,7 +100,8 @@ public partial class DashboardViewModel : ObservableObject
             }
 
             IsRebootRequired = RebootRequiredService.IsRebootRequired();
-            HealthScore.Update(Providers.Sum(p => p.UpdateCount), IsRebootRequired);
+            int remaining = Providers.Sum(p => p.UpdateCount - p.ManualCount);
+            HealthScore.Update(remaining, IsRebootRequired);
             GlobalStatus = "Toutes les mises à jour ont été installées";
 
             if (IsRebootRequired) NotificationService.NotifyRebootRequired();
@@ -111,6 +113,7 @@ public partial class DashboardViewModel : ObservableObject
         finally
         {
             IsInstallingAll = false;
+            InstallAllCommand.NotifyCanExecuteChanged();
         }
     }
 

@@ -5,4 +5,6 @@ public sealed record UpdateResult(
     string Message,
     int InstalledCount = 0,
     int FailedCount    = 0,
-    IReadOnlyList<string>? Errors = null);
+    IReadOnlyList<string>? Errors       = null,
+    int ManualCount    = 0,
+    IReadOnlyList<string>? ManualErrors = null);

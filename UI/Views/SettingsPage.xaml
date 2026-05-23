@@ -7,34 +7,44 @@
     Title="Paramètres">
 
     <ScrollViewer Margin="24,20,24,24" VerticalScrollBarVisibility="Auto">
-        <StackPanel MaxWidth="720" HorizontalAlignment="Left">
+        <StackPanel MaxWidth="740" HorizontalAlignment="Left">
 
-            <TextBlock Text="Paramètres"
-                       FontSize="24" FontWeight="SemiBold"
-                       Foreground="#E0EEFF" Margin="0,0,0,24"/>
+            <!-- Page title -->
+            <StackPanel Margin="0,0,0,24">
+                <TextBlock Text="Paramètres"
+                           FontSize="22" FontWeight="SemiBold"
+                           Foreground="#C8E0F8"/>
+                <TextBlock Text="Configuration et personnalisation de PureUpdate"
+                           FontSize="11" Foreground="#1B2E45" Margin="0,2,0,0"/>
+            </StackPanel>
 
             <!-- Analyse automatique -->
-            <ui:Card Margin="0,0,0,14">
+            <ui:Card Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="Analyse automatique planifiée"
-                               FontSize="15" FontWeight="SemiBold"
-                               Foreground="#E0EEFF" Margin="0,0,0,4"/>
-                    <TextBlock FontSize="12" Foreground="#5070A0" TextWrapping="Wrap" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" FontSize="17"
+                                   Foreground="{DynamicResource ElectricCyanBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Analyse automatique planifiée"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="#E0EEFF" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock FontSize="12" Foreground="#405878" TextWrapping="Wrap" Margin="0,0,0,14">
                         Planifie une analyse automatique via le Planificateur de tâches Windows (droits admin requis).
                     </TextBlock>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <TextBlock Text="Planification actuelle : " FontSize="12" Foreground="#5070A0" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Planification actuelle : " FontSize="12" Foreground="#405878" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding ScanScheduleDisplay}" FontSize="12" FontWeight="SemiBold"
                                    Foreground="#00B7FF" VerticalAlignment="Center"/>
-                        <Border CornerRadius="4" Padding="6,2" Margin="12,0,0,0"
+                        <Border CornerRadius="4" Padding="7,2" Margin="12,0,0,0"
                                 Background="#0A3A1A"
                                 Visibility="{Binding TaskExists, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="ACTIF" FontSize="9.5" FontWeight="Bold" Foreground="#4CAF50"/>
                         </Border>
                     </StackPanel>
 
-                    <WrapPanel Margin="0,0,0,8">
+                    <WrapPanel Margin="0,0,0,10">
                         <ui:Button Content="Désactivé"
                                    Command="{Binding SetScheduleCommand}"
                                    CommandParameter="Disabled"
@@ -53,16 +63,21 @@
                                  Visibility="{Binding IsApplyingSchedule, Converter={StaticResource BoolToVis}}"/>
 
                     <TextBlock Text="{Binding SchedulerStatus}"
-                               FontSize="11" Foreground="#4070A0" Margin="0,2,0,0"/>
+                               FontSize="11" Foreground="#3A6090" Margin="0,2,0,0"/>
                 </StackPanel>
             </ui:Card>
 
-            <!-- Options -->
-            <ui:Card Margin="0,0,0,14">
+            <!-- Options de comportement -->
+            <ui:Card Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="Options de comportement"
-                               FontSize="15" FontWeight="SemiBold"
-                               Foreground="#E0EEFF" Margin="0,0,0,14"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                        <TextBlock Text="&#xE712;" FontFamily="Segoe MDL2 Assets" FontSize="17"
+                                   Foreground="{DynamicResource ElectricCyanBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Options de comportement"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="#E0EEFF" VerticalAlignment="Center"/>
+                    </StackPanel>
 
                     <Grid Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
@@ -73,13 +88,13 @@
                             <TextBlock Text="Fermer dans la barre système"
                                        FontSize="13" Foreground="#C0D8F0"/>
                             <TextBlock Text="Réduit l'application dans la zone de notification au lieu de la fermer."
-                                       FontSize="11" Foreground="#4A6A8A" TextWrapping="Wrap"/>
+                                       FontSize="11" Foreground="#3A5878" TextWrapping="Wrap"/>
                         </StackPanel>
                         <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding CloseToTray}"
                                          VerticalAlignment="Center" Margin="16,0,0,0"/>
                     </Grid>
 
-                    <Rectangle Height="1" Fill="#141E2E" Margin="0,0,0,12"/>
+                    <Rectangle Height="1" Fill="#0E1A28" Margin="0,0,0,12"/>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -90,7 +105,7 @@
                             <TextBlock Text="Point de restauration avant installation"
                                        FontSize="13" Foreground="#C0D8F0"/>
                             <TextBlock Text="Crée automatiquement un point de restauration système avant d'installer des mises à jour."
-                                       FontSize="11" Foreground="#4A6A8A" TextWrapping="Wrap"/>
+                                       FontSize="11" Foreground="#3A5878" TextWrapping="Wrap"/>
                         </StackPanel>
                         <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoRestorePoint}"
                                          VerticalAlignment="Center" Margin="16,0,0,0"/>
@@ -98,15 +113,20 @@
                 </StackPanel>
             </ui:Card>
 
-            <!-- Cache cleanup -->
-            <ui:Card Margin="0,0,0,14">
+            <!-- Nettoyage du cache -->
+            <ui:Card Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="Nettoyage du cache Windows"
-                               FontSize="15" FontWeight="SemiBold"
-                               Foreground="#E0EEFF" Margin="0,0,0,6"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="&#xEF90;" FontFamily="Segoe MDL2 Assets" FontSize="17"
+                                   Foreground="{DynamicResource ElectricCyanBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Nettoyage du cache Windows"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="#E0EEFF" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <TextBlock Text="Supprime le contenu de SoftwareDistribution\Download et les fichiers temporaires système."
-                               FontSize="12" Foreground="#5070A0"
-                               TextWrapping="Wrap" Margin="0,0,0,12"/>
+                               FontSize="12" Foreground="#405878"
+                               TextWrapping="Wrap" Margin="0,0,0,14"/>
                     <ui:Button x:Name="BtnCleanCache"
                                Content="Nettoyer le cache"
                                Icon="{ui:SymbolIcon Broom24}"
@@ -116,22 +136,27 @@
                     <TextBlock x:Name="TxtCleanStatus"
                                Foreground="#4CAF50"
                                FontSize="11"
-                               Margin="0,6,0,0"
+                               Margin="0,8,0,0"
                                Visibility="Collapsed"/>
                 </StackPanel>
             </ui:Card>
 
             <!-- Personnalisation -->
-            <ui:Card Margin="0,0,0,14">
+            <ui:Card Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="Personnalisation"
-                               FontSize="15" FontWeight="SemiBold"
-                               Foreground="#E0EEFF" Margin="0,0,0,14"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                        <TextBlock Text="&#xE771;" FontFamily="Segoe MDL2 Assets" FontSize="17"
+                                   Foreground="{DynamicResource ElectricCyanBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="Personnalisation"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="#E0EEFF" VerticalAlignment="Center"/>
+                    </StackPanel>
 
                     <!-- Couleur d'accentuation -->
                     <TextBlock Text="Couleur d'accentuation"
                                FontSize="12" FontWeight="SemiBold"
-                               Foreground="#8AACCC" Margin="0,0,0,10"/>
+                               Foreground="#7A9EC0" Margin="0,0,0,10"/>
                     <ListBox ItemsSource="{Binding AccentColorOptions}"
                              SelectedItem="{Binding SelectedAccentColor}"
                              Background="Transparent" BorderThickness="0"
@@ -167,12 +192,12 @@
                         </ListBox.ItemContainerStyle>
                     </ListBox>
 
-                    <Rectangle Height="1" Fill="#141E2E" Margin="0,0,0,14"/>
+                    <Rectangle Height="1" Fill="#0E1A28" Margin="0,0,0,16"/>
 
                     <!-- Police d'interface -->
                     <TextBlock Text="Police d'interface"
                                FontSize="12" FontWeight="SemiBold"
-                               Foreground="#8AACCC" Margin="0,0,0,10"/>
+                               Foreground="#7A9EC0" Margin="0,0,0,10"/>
                     <ListBox ItemsSource="{Binding FontFamilies}"
                              SelectedItem="{Binding SelectedFontFamily}"
                              Background="Transparent" BorderThickness="0">
@@ -188,19 +213,19 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListBoxItem">
-                                            <Border x:Name="Bd" Background="#0A1825" CornerRadius="6"
+                                            <Border x:Name="Bd" Background="#0A1825" CornerRadius="7"
                                                     Padding="12,7" Cursor="Hand"
-                                                    BorderThickness="1" BorderBrush="#1A2840">
+                                                    BorderThickness="1" BorderBrush="#0E1E30">
                                                 <TextBlock Text="{Binding}" FontFamily="{Binding}"
-                                                           FontSize="12" Foreground="#A0C0E0"/>
+                                                           FontSize="12" Foreground="#90B4D4"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background"   Value="#120A2040"/>
-                                                    <Setter TargetName="Bd" Property="BorderBrush"  Value="{DynamicResource ElectricCyanBrush}"/>
+                                                    <Setter TargetName="Bd" Property="Background"  Value="#0F0A2040"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ElectricCyanBrush}"/>
                                                 </Trigger>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="#10FFFFFF"/>
+                                                    <Setter TargetName="Bd" Property="Background" Value="#0DFFFFFF"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -215,9 +240,14 @@
             <!-- À propos -->
             <ui:Card>
                 <StackPanel>
-                    <TextBlock Text="À propos de PureUpdate"
-                               FontSize="15" FontWeight="SemiBold"
-                               Foreground="#E0EEFF" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="17"
+                                   Foreground="{DynamicResource ElectricCyanBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="À propos de PureUpdate"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="#E0EEFF" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="140"/>
@@ -230,16 +260,16 @@
                             <RowDefinition/>
                             <RowDefinition/>
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Version" Foreground="#405070" FontSize="12"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="1.2.0" Foreground="#00B7FF" FontSize="12" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Framework" Foreground="#405070" FontSize="12" Margin="0,5,0,0"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text=".NET 8.0 + WPF-UI (Fluent Design)" Foreground="#A0C0E0" FontSize="12" Margin="0,5,0,0"/>
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Compatibilité" Foreground="#405070" FontSize="12" Margin="0,5,0,0"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows 10 / 11 (x64)" Foreground="#A0C0E0" FontSize="12" Margin="0,5,0,0"/>
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Sources" Foreground="#405070" FontSize="12" Margin="0,5,0,0"/>
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="Windows Update · Winget · Chocolatey · Scoop" Foreground="#A0C0E0" FontSize="12" Margin="0,5,0,0"/>
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Licence" Foreground="#405070" FontSize="12" Margin="0,5,0,0"/>
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="MIT" Foreground="#A0C0E0" FontSize="12" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Version"       Foreground="#304A68" FontSize="12"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="1.3.0"          Foreground="#00B7FF" FontSize="12" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Framework"     Foreground="#304A68" FontSize="12" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text=".NET 8.0 + WPF-UI (Fluent Design)" Foreground="#90B4D4" FontSize="12" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Compatibilité" Foreground="#304A68" FontSize="12" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows 10 / 11 (x64)" Foreground="#90B4D4" FontSize="12" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Sources"       Foreground="#304A68" FontSize="12" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="Windows Update · Winget · Chocolatey · Scoop" Foreground="#90B4D4" FontSize="12" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Licence"       Foreground="#304A68" FontSize="12" Margin="0,6,0,0"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="MIT"           Foreground="#90B4D4" FontSize="12" Margin="0,6,0,0"/>
                     </Grid>
                 </StackPanel>
             </ui:Card>

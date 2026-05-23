@@ -6,99 +6,209 @@
     xmlns:vm="clr-namespace:PureUpdate.UI.ViewModels"
     Background="Transparent">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  CanContentScroll="False">
-        <StackPanel Margin="24,18,24,24">
+    <Page.Resources>
+        <!-- Slim rounded determinate progress bar -->
+        <Style x:Key="SlimBar" TargetType="ProgressBar">
+            <Setter Property="Height"          Value="5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background"      Value="#101C2E"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+                            <Border x:Name="PART_Track"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="3"/>
+                            <Border x:Name="PART_Indicator"
+                                    Background="{TemplateBinding Foreground}"
+                                    CornerRadius="3"
+                                    HorizontalAlignment="Left"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
 
-            <!-- Health Score + Reboot Banner -->
-            <Border Background="#0C1828" CornerRadius="10"
-                    Padding="18,14" Margin="0,0,0,12">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="False">
+        <StackPanel Margin="24,20,24,24">
 
-                    <!-- Score number -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
-                        <TextBlock Text="{Binding HealthScore.Score}"
-                                   FontSize="44" FontWeight="Bold"
-                                   Foreground="{Binding HealthScore.ScoreBrush}"
-                                   VerticalAlignment="Center"/>
-                        <TextBlock Text="/100" FontSize="15"
-                                   Foreground="#2A4060" VerticalAlignment="Bottom"
-                                   Margin="4,0,0,8"/>
-                    </StackPanel>
+            <!-- ── Page header + global actions ── -->
+            <Grid Margin="0,0,0,18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Tableau de bord"
+                               FontSize="22" FontWeight="SemiBold"
+                               Foreground="#C8E0F8"/>
+                    <TextBlock Text="Gestion centralisée des mises à jour Windows"
+                               FontSize="11" Foreground="#4A6A8A" Margin="0,2,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:Button Content="Analyser tout"
+                               Command="{Binding ScanAllCommand}"
+                               Appearance="Primary"
+                               FontSize="12.5" Padding="16,8" Margin="0,0,8,0"/>
+                    <ui:Button Content="Tout installer"
+                               Command="{Binding InstallAllCommand}"
+                               FontSize="12.5" Padding="16,8"/>
+                    <ProgressBar IsIndeterminate="True" Width="60" Height="3"
+                                 Margin="12,0,0,0" VerticalAlignment="Center"
+                                 Visibility="{Binding IsScanningAll, Converter={StaticResource BoolToVis}}"/>
+                    <ProgressBar IsIndeterminate="True" Width="60" Height="3"
+                                 Foreground="#FF9800"
+                                 Margin="12,0,0,0" VerticalAlignment="Center"
+                                 Visibility="{Binding IsInstallingAll, Converter={StaticResource BoolToVis}}"/>
+                </StackPanel>
+            </Grid>
 
-                    <!-- Label -->
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Score de santé du système"
-                                   FontSize="10.5" Foreground="#3A5A7A"/>
-                        <TextBlock Text="{Binding HealthScore.Label}"
-                                   FontSize="19" FontWeight="SemiBold"
-                                   Foreground="{Binding HealthScore.ScoreBrush}"/>
-                    </StackPanel>
+            <!-- ── Health + Status row ── -->
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
 
-                    <!-- Reboot Required indicator -->
-                    <Border Grid.Column="2" CornerRadius="9" Padding="14,9"
-                            Background="#50001020" VerticalAlignment="Center"
-                            Visibility="{Binding IsRebootRequired, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets"
-                                       FontSize="16" Foreground="#FF6878"
-                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="REDÉMARRAGE REQUIS"
-                                           FontSize="9.5" FontWeight="Bold"
-                                           Foreground="#FF6878"/>
-                                <TextBlock Text="Redémarrez pour finaliser les mises à jour"
-                                           FontSize="10.5" Foreground="#C05060"/>
+                <!-- Health Score card -->
+                <Border Grid.Column="0" Background="#0C1828" CornerRadius="14"
+                        Margin="0,0,10,0" Padding="22,20">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Score ring (nested ellipses) -->
+                            <Grid Width="86" Height="86" Margin="0,0,22,0" VerticalAlignment="Center">
+                                <Ellipse Width="86" Height="86"
+                                         Stroke="{Binding HealthScore.ScoreBrush}"
+                                         StrokeThickness="7" Fill="Transparent"/>
+                                <Ellipse Width="70" Height="70" Fill="#0C1828"/>
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding HealthScore.Score}"
+                                               FontSize="26" FontWeight="Bold"
+                                               Foreground="{Binding HealthScore.ScoreBrush}"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="/100" FontSize="8.5" Foreground="#3A5A7A"
+                                               HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Labels + progress bar -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Score de santé du système"
+                                           FontSize="10.5" Foreground="#5070A0"/>
+                                <TextBlock Text="{Binding HealthScore.Label}"
+                                           FontSize="21" FontWeight="SemiBold"
+                                           Foreground="{Binding HealthScore.ScoreBrush}"
+                                           Margin="0,3,0,10"/>
+                                <ProgressBar Value="{Binding HealthScore.Score}" Maximum="100"
+                                             Style="{StaticResource SlimBar}"
+                                             Foreground="{Binding HealthScore.ScoreBrush}"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </Border>
+                        </Grid>
 
-            <!-- Status bar -->
-            <Border Background="#0C1828" CornerRadius="10"
-                    Padding="16,9" Margin="0,0,0,14">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <WrapPanel VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <Ellipse Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,6,0"
-                                     Fill="{Binding IsAdmin, Converter={StaticResource AdminBrush}}"/>
-                            <TextBlock Text="Admin" FontSize="11.5" Foreground="#5070A0" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,20,0">
-                            <Ellipse Width="7" Height="7" VerticalAlignment="Center" Margin="0,0,6,0"
-                                     Fill="{Binding IsNetworkAvailable, Converter={StaticResource NetworkBrush}}"/>
-                            <TextBlock Text="Réseau" FontSize="11.5" Foreground="#5070A0" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding GlobalStatus}"
-                                   FontSize="11.5" Foreground="#304060" VerticalAlignment="Center"/>
-                    </WrapPanel>
-                    <!-- Global scan + install -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <ui:Button Content="Analyser tout"
-                                   Command="{Binding ScanAllCommand}"
-                                   Appearance="Primary"
-                                   Margin="0,0,8,0" FontSize="12" Padding="14,7"/>
-                        <ui:Button Content="Tout installer"
-                                   Command="{Binding InstallAllCommand}"
-                                   FontSize="12" Padding="14,7"/>
-                        <ProgressBar IsIndeterminate="True" Width="80" Height="3"
-                                     Margin="10,0,0,0" VerticalAlignment="Center"
-                                     Visibility="{Binding IsScanningAll, Converter={StaticResource BoolToVis}}"/>
+                        <!-- Reboot banner (collapsed when not required) -->
+                        <Border CornerRadius="9" Padding="14,10" Margin="0,16,0,0"
+                                Background="#200A0015"
+                                BorderBrush="#4DFF4040" BorderThickness="1"
+                                Visibility="{Binding IsRebootRequired, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="16" Foreground="#FF6878"
+                                           VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="REDÉMARRAGE REQUIS"
+                                               FontSize="9.5" FontWeight="Bold" Foreground="#FF6878"/>
+                                    <TextBlock Text="Redémarrez pour finaliser les mises à jour"
+                                               FontSize="10.5" Foreground="#C05060"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Grid>
-            </Border>
+                </Border>
 
-            <!-- Provider cards grid -->
+                <!-- Status card -->
+                <Border Grid.Column="1" Background="#0C1828" CornerRadius="14" Padding="20,20">
+                    <StackPanel>
+                        <TextBlock Text="Statut système"
+                                   FontSize="10.5" Foreground="#5070A0" Margin="0,0,0,14"/>
+
+                        <!-- Admin -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                     Fill="{Binding IsAdmin, Converter={StaticResource AdminBrush}}"/>
+                            <TextBlock Grid.Column="1" Text="Administrateur" FontSize="12"
+                                       Foreground="#7090B0" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <Border Grid.Column="2" CornerRadius="5" Padding="8,2" VerticalAlignment="Center"
+                                    Background="#14304050">
+                                <TextBlock FontSize="10" FontWeight="Bold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="NON ADMIN"/>
+                                            <Setter Property="Foreground" Value="#E53935"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsAdmin}" Value="True">
+                                                    <Setter Property="Text"       Value="ADMIN"/>
+                                                    <Setter Property="Foreground" Value="#4CAF50"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </Grid>
+
+                        <!-- Network -->
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                     Fill="{Binding IsNetworkAvailable, Converter={StaticResource NetworkBrush}}"/>
+                            <TextBlock Grid.Column="1" Text="Réseau" FontSize="12"
+                                       Foreground="#7090B0" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <Border Grid.Column="2" CornerRadius="5" Padding="8,2" VerticalAlignment="Center"
+                                    Background="#14304050">
+                                <TextBlock FontSize="10" FontWeight="Bold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="HORS LIGNE"/>
+                                            <Setter Property="Foreground" Value="#E53935"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsNetworkAvailable}" Value="True">
+                                                    <Setter Property="Text"       Value="EN LIGNE"/>
+                                                    <Setter Property="Foreground" Value="#4CAF50"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </Grid>
+
+                        <!-- Separator -->
+                        <Rectangle Height="1" Fill="#1A2E48" Margin="0,0,0,12"/>
+
+                        <!-- Global status -->
+                        <TextBlock Text="{Binding GlobalStatus}"
+                                   FontSize="11.5" Foreground="#5070A0"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ── Provider cards ── -->
             <ItemsControl ItemsSource="{Binding Providers}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -107,153 +217,178 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:ProviderCardViewModel}">
-                        <Border Margin="0,0,10,10" CornerRadius="12"
-                                Background="#0C1828"
-                                BorderBrush="{Binding AccentBrush}" BorderThickness="0,0,0,2">
-                            <Grid Margin="18,16">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
+                        <Grid Margin="0,0,10,10">
+                            <Border CornerRadius="12" Background="#0C1828">
+                                <Grid Margin="22,16,18,16">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
 
-                                <!-- Header: name + badge -->
-                                <Grid Grid.Row="0" Margin="0,0,0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}"
-                                                   FontSize="16" FontWeight="SemiBold"
-                                                   Foreground="#D8EEFF"/>
-                                        <TextBlock Text="{Binding Description}"
-                                                   FontSize="10.5" Foreground="#2E4A6A"
-                                                   Margin="0,2,0,0"/>
-                                    </StackPanel>
-                                    <Border Grid.Column="1" CornerRadius="5" Padding="7,3"
-                                            Background="{Binding AccentBrush}" Opacity="0.85">
-                                        <TextBlock FontSize="9.5" Foreground="White" FontWeight="Bold">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="NON INSTALLÉ"/>
+                                    <!-- Header: name + availability badge -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="16" FontWeight="SemiBold"
+                                                       Foreground="#D8EEFF"/>
+                                            <TextBlock Text="{Binding Description}"
+                                                       FontSize="10.5" Foreground="#4A6A8A"
+                                                       Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                        <Border Grid.Column="1" CornerRadius="5" Padding="8,3"
+                                                Background="{Binding AccentBrush}" VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Opacity" Value="0.3"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsAvailable}" Value="True">
-                                                            <Setter Property="Text" Value="ACTIF"/>
+                                                            <Setter Property="Opacity" Value="0.9"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                            </Border.Style>
+                                            <TextBlock FontSize="9.5" Foreground="White" FontWeight="Bold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="NON INSTALLÉ"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsAvailable}" Value="True">
+                                                                <Setter Property="Text" Value="ACTIF"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Update count + status -->
+                                    <Grid Grid.Row="1" Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding UpdateCount, Converter={StaticResource UpdateCountConv}}"
+                                                   FontSize="28" FontWeight="Bold"
+                                                   Foreground="{Binding AccentBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding StatusText}"
+                                                   FontSize="11" Foreground="#5070A0"
+                                                   VerticalAlignment="Bottom" Margin="8,0,0,3"/>
+                                    </Grid>
+
+                                    <!-- Active progress bar -->
+                                    <ProgressBar Grid.Row="2" IsIndeterminate="True" Height="2"
+                                                 Margin="0,0,0,6"
+                                                 Foreground="{Binding AccentBrush}"
+                                                 Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}"/>
+
+                                    <!-- Progress detail -->
+                                    <TextBlock Grid.Row="3" Text="{Binding ProgressText}"
+                                               FontSize="10" Foreground="#4A6A8A"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,0,0,6"/>
+
+                                    <!-- Updates list -->
+                                    <Border Grid.Row="4" MaxHeight="150" Margin="0,0,0,10"
+                                            Visibility="{Binding HasUpdates, Converter={StaticResource BoolToVis}}">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding Updates}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="0,2">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      VerticalAlignment="Center"
+                                                                      Margin="0,0,6,0"/>
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding Title}"
+                                                                       FontSize="11" Foreground="#90B0D0"
+                                                                       VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Grid.Column="2"
+                                                                       FontSize="10" Foreground="#406080"
+                                                                       Margin="8,0,0,0" VerticalAlignment="Center">
+                                                                <Run Text="{Binding Version, Mode=OneWay}"/>
+                                                                <Run Text="→"/>
+                                                                <Run Foreground="#5CB85C"
+                                                                     Text="{Binding AvailableVersion, Mode=OneWay}"/>
+                                                            </TextBlock>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
                                     </Border>
+
+                                    <!-- Buttons -->
+                                    <WrapPanel Grid.Row="5">
+                                        <ui:Button Content="Analyser"
+                                                   Command="{Binding ScanCommand}"
+                                                   IsEnabled="{Binding IsAvailable}"
+                                                   Margin="0,0,7,0" FontSize="11.5" Padding="12,6"/>
+                                        <ui:Button Content="Installer tout"
+                                                   Command="{Binding InstallCommand}"
+                                                   Appearance="Primary"
+                                                   IsEnabled="{Binding IsAvailable}"
+                                                   Margin="0,0,7,0" FontSize="11.5" Padding="12,6"/>
+                                        <ui:Button Content="Installer le gestionnaire"
+                                                   Command="{Binding InstallSelfCommand}"
+                                                   Appearance="Caution"
+                                                   FontSize="11" Padding="10,6" Margin="0,0,7,0"
+                                                   Visibility="{Binding CanInstallSelf, Converter={StaticResource BoolToVis}}"/>
+                                        <ui:Button Content="Désinstaller"
+                                                   Command="{Binding UninstallSelfCommand}"
+                                                   FontSize="11" Padding="10,6"
+                                                   Visibility="{Binding CanUninstallSelf, Converter={StaticResource BoolToVis}}"/>
+                                    </WrapPanel>
                                 </Grid>
-
-                                <!-- Update count -->
-                                <TextBlock Grid.Row="1"
-                                           Text="{Binding UpdateCount, Converter={StaticResource UpdateCountConv}}"
-                                           FontSize="30" FontWeight="Bold"
-                                           Foreground="{Binding AccentBrush}"
-                                           Margin="0,0,0,2"/>
-
-                                <!-- Status + progress -->
-                                <TextBlock Grid.Row="2" Text="{Binding StatusText}"
-                                           FontSize="11.5" Foreground="#304A6A" Margin="0,0,0,4"/>
-                                <ProgressBar Grid.Row="3" IsIndeterminate="True" Height="2"
-                                             Margin="0,0,0,8"
-                                             Foreground="{Binding AccentBrush}"
-                                             Visibility="{Binding IsScanning, Converter={StaticResource BoolToVis}}"/>
-                                <TextBlock Grid.Row="4" Text="{Binding ProgressText}"
-                                           FontSize="10" Foreground="#2E4060"
-                                           TextTrimming="CharacterEllipsis" Margin="0,0,0,6"/>
-
-                                <!-- Updates list — visible only when there are updates -->
-                                <Border Grid.Row="5" MaxHeight="160" Margin="0,0,0,10"
-                                        Visibility="{Binding HasUpdates, Converter={StaticResource BoolToVis}}">
-                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                        <ItemsControl ItemsSource="{Binding Updates}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Margin="0,2">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                  VerticalAlignment="Center"
-                                                                  Margin="0,0,6,0"/>
-                                                        <TextBlock Grid.Column="1"
-                                                                   Text="{Binding Title}"
-                                                                   FontSize="11" Foreground="#90B0D0"
-                                                                   VerticalAlignment="Center"
-                                                                   TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Grid.Column="2"
-                                                                   FontSize="10" Foreground="#406080"
-                                                                   Margin="8,0,0,0" VerticalAlignment="Center">
-                                                            <Run Text="{Binding Version, Mode=OneWay}"/>
-                                                            <Run Text="→"/>
-                                                            <Run Foreground="#5CB85C"
-                                                                 Text="{Binding AvailableVersion, Mode=OneWay}"/>
-                                                        </TextBlock>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </ScrollViewer>
-                                </Border>
-
-                                <!-- Buttons -->
-                                <WrapPanel Grid.Row="6">
-                                    <ui:Button Content="Analyser"
-                                               Command="{Binding ScanCommand}"
-                                               IsEnabled="{Binding IsAvailable}"
-                                               Margin="0,0,7,0" FontSize="11.5" Padding="12,6"/>
-                                    <ui:Button Content="Installer tout"
-                                               Command="{Binding InstallCommand}"
-                                               Appearance="Primary"
-                                               IsEnabled="{Binding IsAvailable}"
-                                               Margin="0,0,7,0" FontSize="11.5" Padding="12,6"/>
-                                    <ui:Button Content="Installer le gestionnaire"
-                                               Command="{Binding InstallSelfCommand}"
-                                               Appearance="Caution"
-                                               FontSize="11" Padding="10,6" Margin="0,0,7,0"
-                                               Visibility="{Binding CanInstallSelf, Converter={StaticResource BoolToVis}}"/>
-                                    <ui:Button Content="Désinstaller"
-                                               Command="{Binding UninstallSelfCommand}"
-                                               FontSize="11" Padding="10,6"
-                                               Visibility="{Binding CanUninstallSelf, Converter={StaticResource BoolToVis}}"/>
-                                </WrapPanel>
-                            </Grid>
-                        </Border>
+                            </Border>
+                            <!-- Left accent strip -->
+                            <Border Width="4" HorizontalAlignment="Left"
+                                    CornerRadius="12,0,0,12"
+                                    Background="{Binding AccentBrush}"/>
+                        </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- SDI Offline -->
-            <Border Background="#0A1020" CornerRadius="12"
-                    BorderBrush="#FF6B00" BorderThickness="0,0,0,2"
-                    Padding="18,14" Margin="0,2,10,0"
-                    Visibility="{Binding SdiAvailable, Converter={StaticResource BoolToVis}}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="Mode Hors-Ligne — Snappy Driver Installer"
-                                   FontSize="14" FontWeight="SemiBold" Foreground="#D8EEFF"/>
-                        <TextBlock Text="{Binding SdiStatus}"
-                                   FontSize="11" Foreground="#405060" Margin="0,4,0,0"/>
-                    </StackPanel>
-                    <ui:Button Grid.Column="1" Content="Lancer SDI"
-                               Command="{Binding RunSdiCommand}"
-                               Padding="12,6" FontSize="12"/>
-                </Grid>
-            </Border>
+            <!-- ── SDI Offline card ── -->
+            <Grid Margin="0,2,10,0"
+                  Visibility="{Binding SdiAvailable, Converter={StaticResource BoolToVis}}">
+                <Border CornerRadius="12" Background="#0A1020" Padding="20,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Mode Hors-Ligne — Snappy Driver Installer"
+                                       FontSize="14" FontWeight="SemiBold" Foreground="#D8EEFF"/>
+                            <TextBlock Text="{Binding SdiStatus}"
+                                       FontSize="11" Foreground="#5070A0" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <ui:Button Grid.Column="1" Content="Lancer SDI"
+                                   Command="{Binding RunSdiCommand}"
+                                   Padding="14,7" FontSize="12" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+                <Border Width="4" HorizontalAlignment="Left"
+                        CornerRadius="12,0,0,12"
+                        Background="#FF6B00"/>
+            </Grid>
 
         </StackPanel>
     </ScrollViewer>
