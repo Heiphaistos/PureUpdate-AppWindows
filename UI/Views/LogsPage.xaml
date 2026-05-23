@@ -366,6 +366,92 @@
                 </Grid>
             </TabItem>
 
+            <!-- ═══ Errors ═══ -->
+            <TabItem Header="🔴 Erreurs">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="12,10,12,6">
+                        <ui:Button Content="Charger les erreurs"
+                                   Command="{Binding LoadErrorsCommand}"
+                                   Appearance="Primary"
+                                   Margin="0,0,12,0" Padding="12,6" FontSize="12"/>
+                        <TextBlock Text="{Binding ErrorsStatus}"
+                                   FontSize="11.5" Foreground="#2E4060" VerticalAlignment="Center"/>
+                        <ProgressBar IsIndeterminate="True" Width="72" Height="3"
+                                     Margin="10,0,0,0" VerticalAlignment="Center"
+                                     Visibility="{Binding IsLoadingErrors, Converter={StaticResource BoolToVis}}"/>
+                    </StackPanel>
+                    <Border Grid.Row="1" Background="#050A12" Margin="8,0,8,8"
+                            CornerRadius="9" BorderBrush="#0E1A2A" BorderThickness="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0" Margin="12,10,12,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Date"    Style="{StaticResource ColHeader}"/>
+                                <TextBlock Grid.Column="1" Text="Source"  Style="{StaticResource ColHeader}"/>
+                                <TextBlock Grid.Column="2" Text="Paquet"  Style="{StaticResource ColHeader}"/>
+                                <TextBlock Grid.Column="3" Text="Détail"  Style="{StaticResource ColHeader}"/>
+                            </Grid>
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="6,2">
+                                <ItemsControl ItemsSource="{Binding InstallErrors}"
+                                              VirtualizingPanel.IsVirtualizing="True"
+                                              VirtualizingPanel.VirtualizationMode="Recycling">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="6,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="130"/>
+                                                    <ColumnDefinition Width="110"/>
+                                                    <ColumnDefinition Width="190"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding Date, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}"
+                                                           FontFamily="Consolas" FontSize="11"
+                                                           Foreground="#3A5878" VerticalAlignment="Center"/>
+                                                <Border Grid.Column="1" CornerRadius="4" Padding="6,2"
+                                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                        Background="#18203040">
+                                                    <TextBlock Text="{Binding Provider}"
+                                                               FontSize="10.5" FontWeight="SemiBold"
+                                                               Foreground="#5090C0"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding Title}"
+                                                           FontSize="11.5" FontWeight="SemiBold"
+                                                           Foreground="#E05050"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="3"
+                                                           Text="{Binding ErrorMessage}"
+                                                           FontFamily="Consolas" FontSize="10.5"
+                                                           Foreground="#5A7090"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
             <!-- ═══ App activity ═══ -->
             <TabItem Header="📋 Activité app">
                 <Grid>
