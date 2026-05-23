@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PureUpdate.Core.Models;
 using PureUpdate.Core.Providers;
+using PureUpdate.Core.Services;
 using PureUpdate.Utils;
 
 namespace PureUpdate.UI.ViewModels;
@@ -144,6 +145,13 @@ public partial class ProviderCardViewModel : ObservableObject
                 if (result.FailedCount > 0)
                     parts.Add($"{result.FailedCount} erreur(s) : {string.Join(", ", result.Errors!)}");
                 StatusText = parts.Count > 0 ? string.Join(" · ", parts) : "Terminé";
+
+                // Alimenter le store d'erreurs global (visible depuis l'onglet Erreurs)
+                var ts = DateTime.Now;
+                foreach (var title in result.Errors ?? [])
+                    InstallErrorStore.Add(new InstallError(ts, Name, title, "Erreur d'installation"));
+                foreach (var title in result.ManualErrors ?? [])
+                    InstallErrorStore.Add(new InstallError(ts, Name, title, "Installation manuelle requise"));
             }
         }
         catch (OperationCanceledException) { StatusText = "Annulé"; }

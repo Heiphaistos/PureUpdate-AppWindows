@@ -7,6 +7,7 @@ using PureUpdate.Core.Models;
 using PureUpdate.Core.Providers;
 using PureUpdate.Core.Services;
 using PureUpdate.Utils;
+using PureUpdate.Utils;
 
 namespace PureUpdate.UI.ViewModels;
 
@@ -35,6 +36,12 @@ public partial class LogsViewModel : ObservableObject, IDisposable
     public LogsViewModel()
     {
         Logger.OnLog += OnAppLog;
+        InstallErrorStore.OnError += OnInstallError;
+    }
+
+    private void OnInstallError(InstallError error)
+    {
+        Application.Current?.Dispatcher.InvokeAsync(() => InstallErrors.Insert(0, error));
     }
 
     public void AutoLoadAsync()
@@ -113,7 +120,10 @@ public partial class LogsViewModel : ObservableObject, IDisposable
 
         try
         {
-            // 1. Erreurs Windows Update (charge l'historique si pas encore fait)
+            // 1. Erreurs de session en cours (depuis InstallErrorStore)
+            var sessionErrors = InstallErrorStore.All.ToList();
+
+            // 2. Erreurs Windows Update (charge l'historique si pas encore fait)
             if (WuHistory.Count == 0)
                 await LoadWuHistoryAsync(ct);
 
@@ -121,16 +131,26 @@ public partial class LogsViewModel : ObservableObject, IDisposable
                 .Where(h => !h.IsSuccess)
                 .Select(h => new InstallError(h.Date, "Windows Update", h.Title, h.StatusLabel));
 
-            // 2. Erreurs des providers depuis le fichier log
+            // 3. Erreurs des sessions précédentes depuis le fichier log
             var logPath = Path.Combine(AppContext.BaseDirectory, ".logs", "pureupdate.log");
             var logErrors = File.Exists(logPath)
                 ? await ParseLogErrorsAsync(logPath, ct)
                 : [];
 
-            // Fusionner + trier par date décroissante
-            var all = wuFailed.Concat(logErrors)
-                               .OrderByDescending(e => e.Date)
-                               .ToList();
+            // Fusionner tout, dédupliquer les session errors déjà présents, trier par date décroissante
+            var existing = new HashSet<(string, string)>(
+                sessionErrors.Select(e => (e.Provider, e.Title)),
+                EqualityComparer<(string, string)>.Default);
+
+            var historical = wuFailed
+                .Concat(logErrors)
+                .Where(e => !existing.Contains((e.Provider, e.Title)))
+                .OrderByDescending(e => e.Date);
+
+            var all = sessionErrors
+                .Concat(historical)
+                .OrderByDescending(e => e.Date)
+                .ToList();
 
             foreach (var e in all) InstallErrors.Add(e);
 
@@ -216,6 +236,7 @@ public partial class LogsViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        Logger.OnLog -= OnAppLog;
+        Logger.OnLog              -= OnAppLog;
+        InstallErrorStore.OnError -= OnInstallError;
     }
 }
