@@ -1,0 +1,33 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "21 3 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (csharp)
+    runs-on: windows-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.x"
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          build-mode: autobuild
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:csharp"
