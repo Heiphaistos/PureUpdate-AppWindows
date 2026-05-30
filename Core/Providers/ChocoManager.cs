@@ -11,12 +11,21 @@ public sealed class ChocoManager : CliProviderBase, IUpdateProvider, ISelfManage
     public string AccentHex   => "#FF6900";
 
     private bool? _available;
-    public bool IsAvailable => _available ??= IsCommandAvailable("choco");
+    public bool IsAvailable => _available ??= CheckChocoAvailable();
 
     public bool CheckAvailability()
     {
-        _available = IsCommandAvailable("choco");
+        _available = CheckChocoAvailable();
         return _available.Value;
+    }
+
+    private static bool CheckChocoAvailable()
+    {
+        // Filesystem check — contourne le PATH statique capturé au démarrage
+        var chocoInstall = Environment.GetEnvironmentVariable("ChocolateyInstall")
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "chocolatey");
+        if (File.Exists(Path.Combine(chocoInstall, "bin", "choco.exe"))) return true;
+        return IsCommandAvailable("choco");
     }
 
     // --- IUpdateProvider ---

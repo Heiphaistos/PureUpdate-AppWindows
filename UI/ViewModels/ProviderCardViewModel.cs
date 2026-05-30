@@ -242,7 +242,7 @@ public partial class ProviderCardViewModel : ObservableObject
             OnPropertyChanged(nameof(CanInstallSelf));
             OnPropertyChanged(nameof(CanUninstallSelf));
         }
-        catch (Exception ex) { Logger.Error($"[{Name}] InstallSelf: {ex.Message}"); StatusText = "Erreur"; }
+        catch (Exception ex) { Logger.Error($"[{Name}] InstallSelf: {ex.Message}"); StatusText = $"Erreur : {ex.Message}"; }
         finally { IsManaging = false; ProgressText = string.Empty; }
     }
 

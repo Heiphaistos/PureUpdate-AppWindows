@@ -54,7 +54,13 @@ public abstract class CliProviderBase
         process.ErrorDataReceived += (_, e) =>
         {
             if (e.Data is null) return;
-            Logger.Warn($"[{exe}] {e.Data}");
+            var clean = StripAnsi(e.Data);
+            Logger.Warn($"[{exe}] {clean}");
+            if (!string.IsNullOrWhiteSpace(clean))
+            {
+                sb.AppendLine(clean);
+                progress?.Report(clean);
+            }
         };
 
         process.Start();

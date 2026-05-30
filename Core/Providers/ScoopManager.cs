@@ -78,8 +78,9 @@ public sealed class ScoopManager : CliProviderBase, IUpdateProvider, ISelfManage
         Logger.Info("[Scoop] Auto-installation...");
         try
         {
+            // -RunAsAdmin requis quand PureUpdate tourne en administrateur
             var script = "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force; " +
-                         "Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression";
+                         "iex \"& {$(irm get.scoop.sh)} -RunAsAdmin\"";
             var output = await RunAsync("powershell.exe",
                 $"-NoProfile -NonInteractive -Command \"{script}\"", progress, ct);
 
