@@ -2,7 +2,10 @@
 bin/
 obj/
 publish/
+installer_output/
+PureUpdate_v*/
 *.zip
+*.exe
 
 # Logs
 .logs/

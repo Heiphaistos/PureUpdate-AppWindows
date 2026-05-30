@@ -3,7 +3,7 @@ using PureUpdate.Utils;
 
 namespace PureUpdate.Core.Providers;
 
-public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManagedProvider
+public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManagedProvider, IUninstallProvider
 {
     public string Name        => "Winget";
     public string Description => "Windows Package Manager";
@@ -65,23 +65,38 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
         int installed = 0, failed = 0, manual = 0;
         var errors       = new List<string>();
         var manualErrors = new List<string>();
+        var errorCodes   = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var item in items.Where(i => i.IsSelected))
+        var selected = items.Where(i => i.IsSelected).ToList();
+        int total    = selected.Count;
+        int idx      = 0;
+
+        foreach (var item in selected)
         {
+            idx++;
             ct.ThrowIfCancellationRequested();
-            progress?.Report($"Installation: {item.Title}...");
+            progress?.Report($"[{idx}/{total}] {item.Title}...");
             try
             {
                 var (output, exitCode) = await RunWithCodeAsync("winget",
-                    $"upgrade --id \"{item.Id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements",
+                    $"upgrade --id \"{item.Id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
                     progress, ct);
+
+                // 0x8A15002B = AGREEMENT_NOT_ACCEPTED : retry avec --force pour forcer l'acceptation
+                if (exitCode == -1978335189)
+                {
+                    Logger.Warn($"[Winget] {item.Title}: accord requis, retry --force");
+                    (output, exitCode) = await RunWithCodeAsync("winget",
+                        $"upgrade --id \"{item.Id}\" --force --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
+                        progress, ct);
+                }
 
                 // 0x8A150006 = SHELLEXEC_INSTALL_FAILED : retry sans --silent
                 if (exitCode == -1978335226)
                 {
                     Logger.Warn($"[Winget] {item.Title}: ShellExec échoué, retry sans --silent");
                     (output, exitCode) = await RunWithCodeAsync("winget",
-                        $"upgrade --id \"{item.Id}\" --include-unknown --accept-package-agreements --accept-source-agreements",
+                        $"upgrade --id \"{item.Id}\" --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
                         progress, ct);
                 }
 
@@ -106,6 +121,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                 {
                     failed++;
                     errors.Add(item.Title);
+                    errorCodes[item.Title] = $"0x{(uint)exitCode:X8}";
                     var detail = output.Split('\n').LastOrDefault(l => !string.IsNullOrWhiteSpace(l))?.Trim() ?? "";
                     Logger.Warn($"[Winget] {item.Title}: exit {exitCode:X8}{(string.IsNullOrEmpty(detail) ? "" : $" — {detail}")}");
                 }
@@ -117,7 +133,8 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
         return new UpdateResult(
             failed == 0,
             $"{installed} installées, {manual} manuelles, {failed} erreurs",
-            installed, failed, errors, manual, manualErrors);
+            installed, failed, errors, manual, manualErrors,
+            errorCodes.Count > 0 ? errorCodes : null);
     }
 
     // --- ISelfManagedProvider ---
@@ -146,6 +163,50 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { Logger.Error($"[Winget] GetInstalled: {ex.Message}"); }
         return items;
+    }
+
+    // --- IUninstallProvider ---
+
+    public async Task<UninstallResult> UninstallPackagesAsync(
+        List<HistoryItem>  items,
+        IProgress<string>? progress,
+        CancellationToken  ct)
+    {
+        if (!IsAvailable) return new UninstallResult(false, "Winget non disponible");
+
+        int uninstalled = 0, failed = 0;
+        var errors = new List<string>();
+
+        foreach (var item in items)
+        {
+            ct.ThrowIfCancellationRequested();
+            progress?.Report($"Désinstallation: {item.Title}...");
+            try
+            {
+                var (output, exitCode) = await RunWithCodeAsync("winget",
+                    $"uninstall --id \"{item.Id}\" --silent --accept-source-agreements --disable-interactivity",
+                    progress, ct);
+
+                if (exitCode is 0 or 3010)
+                {
+                    uninstalled++;
+                    Logger.Info($"[Winget] Désinstallé: {item.Title}");
+                }
+                else
+                {
+                    // Retry sans --silent si l'installeur ne supporte pas le mode silencieux
+                    var (output2, exitCode2) = await RunWithCodeAsync("winget",
+                        $"uninstall --id \"{item.Id}\" --accept-source-agreements",
+                        progress, ct);
+                    if (exitCode2 is 0 or 3010) { uninstalled++; Logger.Info($"[Winget] Désinstallé (retry): {item.Title}"); }
+                    else { failed++; errors.Add(item.Title); Logger.Warn($"[Winget] Échec désinstall {item.Title}: exit {exitCode2:X8}"); }
+                }
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex) { failed++; errors.Add(item.Title); Logger.Error($"[Winget] Désinstall {item.Title}: {ex.Message}"); }
+        }
+
+        return new UninstallResult(failed == 0, $"{uninstalled} désinstallé(s), {failed} erreur(s)", uninstalled, failed, errors);
     }
 
     // --- Parsers ---

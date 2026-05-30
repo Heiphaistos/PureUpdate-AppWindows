@@ -129,7 +129,7 @@ public partial class LogsViewModel : ObservableObject, IDisposable
 
             var wuFailed = WuHistory
                 .Where(h => !h.IsSuccess)
-                .Select(h => new InstallError(h.Date, "Windows Update", h.Title, h.StatusLabel));
+                .Select(h => new InstallError(h.Date, "Windows Update", h.Title, h.StatusLabel, h.ErrorCode));
 
             // 3. Erreurs des sessions précédentes depuis le fichier log
             var logPath = Path.Combine(AppContext.BaseDirectory, ".logs", "pureupdate.log");

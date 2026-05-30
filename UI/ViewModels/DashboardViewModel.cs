@@ -63,6 +63,7 @@ public partial class DashboardViewModel : ObservableObject
                 ? $"{total} mise(s) à jour trouvée(s) au total"
                 : "Tous les paquets sont à jour";
 
+            NotificationService.NotifyTotalUpdates(total - manual);
             if (total > 0)        NotificationService.NotifyUpdatesFound(total);
             if (IsRebootRequired) NotificationService.NotifyRebootRequired();
         }

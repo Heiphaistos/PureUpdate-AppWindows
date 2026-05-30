@@ -3,7 +3,7 @@ using PureUpdate.Utils;
 
 namespace PureUpdate.Core.Providers;
 
-public sealed class ScoopManager : CliProviderBase, IUpdateProvider, ISelfManagedProvider
+public sealed class ScoopManager : CliProviderBase, IUpdateProvider, ISelfManagedProvider, IUninstallProvider
 {
     public string Name        => "Scoop";
     public string Description => "Gestionnaire de paquets Scoop";
@@ -121,6 +121,38 @@ public sealed class ScoopManager : CliProviderBase, IUpdateProvider, ISelfManage
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { Logger.Error($"[Scoop] GetInstalled: {ex.Message}"); }
         return items;
+    }
+
+    // --- IUninstallProvider ---
+
+    public async Task<UninstallResult> UninstallPackagesAsync(
+        List<HistoryItem>  items,
+        IProgress<string>? progress,
+        CancellationToken  ct)
+    {
+        if (!IsAvailable) return new UninstallResult(false, "Scoop non disponible");
+
+        int uninstalled = 0, failed = 0;
+        var errors = new List<string>();
+
+        foreach (var item in items)
+        {
+            ct.ThrowIfCancellationRequested();
+            progress?.Report($"Désinstallation: {item.Title}...");
+            try
+            {
+                var (_, exitCode) = await RunWithCodeAsync("powershell.exe",
+                    $"-NoProfile -NonInteractive -Command \"scoop uninstall {item.Id} --purge\"",
+                    progress, ct);
+
+                if (exitCode == 0) { uninstalled++; Logger.Info($"[Scoop] Désinstallé: {item.Title}"); }
+                else { failed++; errors.Add(item.Title); Logger.Warn($"[Scoop] Échec désinstall {item.Title}: exit {exitCode}"); }
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex) { failed++; errors.Add(item.Title); Logger.Error($"[Scoop] Désinstall {item.Title}: {ex.Message}"); }
+        }
+
+        return new UninstallResult(failed == 0, $"{uninstalled} désinstallé(s), {failed} erreur(s)", uninstalled, failed, errors);
     }
 
     // --- Helpers ---

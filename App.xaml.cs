@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Hardcodet.Wpf.TaskbarNotification;
@@ -14,6 +15,7 @@ public partial class App : Application
     public static bool ForceExit { get; set; }
 
     private TaskbarIcon? _trayIcon;
+    private int _lastUpdateCount;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -37,6 +39,8 @@ public partial class App : Application
         }
         catch (Exception ex) { Logger.Error($"[Theme] {ex.Message}"); }
 
+        bool headlessScan = e.Args.Contains("--scan");
+
         try
         {
             var settings = AppSettingsService.Load();
@@ -46,10 +50,16 @@ public partial class App : Application
 
             PureUpdate.Core.Services.ThemeService.Apply(settings);
 
-            if (settings.StartMinimized)
+            if (settings.StartMinimized || headlessScan)
                 mainWin.WindowState = WindowState.Minimized;
 
             mainWin.Show();
+
+            if (headlessScan)
+            {
+                mainWin.Hide();
+                Logger.Info("[App] Mode --scan headless activé");
+            }
         }
         catch (Exception ex)
         {
@@ -74,8 +84,9 @@ public partial class App : Application
             try
             {
                 _trayIcon = BuildTrayIcon();
-                NotificationService.UpdatesFound       += OnUpdatesFound;
-                NotificationService.RebootRequired     += OnRebootRequired;
+                NotificationService.UpdatesFound        += OnUpdatesFound;
+                NotificationService.TotalUpdatesChanged += count => UpdateTrayBadge(count);
+                NotificationService.RebootRequired      += OnRebootRequired;
                 NotificationService.RestorePointCreated += OnRestorePointCreated;
             }
             catch (Exception ex)
@@ -137,10 +148,52 @@ public partial class App : Application
     private void OnRestorePointCreated(string msg) =>
         _trayIcon?.ShowBalloonTip("PureUpdate", $"Point de restauration créé : {msg}", BalloonIcon.Info);
 
+    private void UpdateTrayBadge(int count)
+    {
+        if (_trayIcon is null) return;
+        _lastUpdateCount = count;
+
+        try
+        {
+            if (count <= 0)
+            {
+                _trayIcon.IconSource = new BitmapImage(new Uri("pack://application:,,,/Resources/PureUpdate.ico"));
+                _trayIcon.ToolTipText = "PureUpdate — Tous les paquets sont à jour";
+                return;
+            }
+
+            var baseImg = new BitmapImage(new Uri("pack://application:,,,/Resources/PureUpdate.ico"));
+            var dv = new System.Windows.Media.DrawingVisual();
+            using (var dc = dv.RenderOpen())
+            {
+                dc.DrawImage(baseImg, new Rect(0, 0, 32, 32));
+                // Badge rouge
+                dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(220, 40, 40)), null, new Point(25, 7), 9, 9);
+                string text = count > 99 ? "99+" : count.ToString();
+                double fs   = count > 9 ? 6.5 : 8.0;
+                var ft = new FormattedText(text,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    FlowDirection.LeftToRight,
+                    new Typeface("Arial"),
+                    fs, Brushes.White, 1.0);
+                dc.DrawText(ft, new Point(25 - ft.Width / 2, 7 - ft.Height / 2));
+            }
+
+            var rtb = new RenderTargetBitmap(32, 32, 96, 96, PixelFormats.Pbgra32);
+            rtb.Render(dv);
+            rtb.Freeze();
+
+            _trayIcon.IconSource  = rtb;
+            _trayIcon.ToolTipText = $"PureUpdate — {count} mise(s) à jour en attente";
+        }
+        catch (Exception ex) { Logger.Warn($"[Tray] Badge: {ex.Message}"); }
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
-        NotificationService.UpdatesFound       -= OnUpdatesFound;
-        NotificationService.RebootRequired     -= OnRebootRequired;
+        NotificationService.UpdatesFound        -= OnUpdatesFound;
+        NotificationService.TotalUpdatesChanged -= count => UpdateTrayBadge(count);
+        NotificationService.RebootRequired      -= OnRebootRequired;
         NotificationService.RestorePointCreated -= OnRestorePointCreated;
         _trayIcon?.Dispose();
         Logger.Shutdown();

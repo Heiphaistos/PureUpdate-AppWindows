@@ -1,0 +1,335 @@
+<Page
+    x:Class="PureUpdate.UI.Views.UninstallPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:PureUpdate.UI.ViewModels"
+    xmlns:models="clr-namespace:PureUpdate.Core.Models"
+    Background="Transparent">
+
+    <Page.Resources>
+        <Style x:Key="ProviderTabItem" TargetType="TabItem">
+            <Setter Property="Padding"     Value="18,10"/>
+            <Setter Property="Background"  Value="Transparent"/>
+            <Setter Property="Foreground"  Value="#5070A0"/>
+            <Setter Property="FontSize"    Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Grid>
+                            <Border x:Name="Bd" Background="Transparent"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter ContentSource="Header"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <Border x:Name="BottomBar" Height="2"
+                                    VerticalAlignment="Bottom"
+                                    Background="Transparent" CornerRadius="1"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="BottomBar" Property="Background"
+                                        Value="{DynamicResource ElectricCyanBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource ElectricCyanBrush}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd"  Property="Background" Value="#0AFFFFFF"/>
+                                <Setter Property="Foreground" Value="#B0CCEC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ── Header ── -->
+        <Border Grid.Row="0" Background="#080E1A" Padding="24,18,24,16"
+                BorderBrush="#131E30" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Désinstallation de paquets"
+                               FontSize="22" FontWeight="SemiBold" Foreground="#C8E0F8"/>
+                    <TextBlock Text="Retirez des mises à jour Windows, paquets Winget, Scoop ou Chocolatey"
+                               FontSize="11" Foreground="#4A6A8A" Margin="0,3,0,0"/>
+                </StackPanel>
+                <Border Grid.Column="1" CornerRadius="8" Padding="12,6" VerticalAlignment="Center"
+                        Background="#1A2030">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="14" Foreground="#E06060"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Nécessite les droits administrateur"
+                                   FontSize="10.5" Foreground="#8070A0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ── TabControl ── -->
+        <TabControl Grid.Row="1" Background="Transparent"
+                    BorderThickness="0"
+                    Padding="0"
+                    ItemContainerStyle="{StaticResource ProviderTabItem}"
+                    ItemsSource="{Binding Tabs}">
+
+            <TabControl.Template>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="#080E1A"
+                                BorderBrush="#131E30" BorderThickness="0,0,0,1">
+                            <TabPanel IsItemsHost="True"/>
+                        </Border>
+                        <ContentPresenter Grid.Row="1" ContentSource="SelectedContent"/>
+                    </Grid>
+                </ControlTemplate>
+            </TabControl.Template>
+
+            <!-- Tab header -->
+            <TabControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:ProviderUninstallTabViewModel}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="7" Height="7" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill"    Value="{Binding AccentBrush}"/>
+                                    <Setter Property="Opacity" Value="0.3"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsAvailable}" Value="True">
+                                            <Setter Property="Opacity" Value="1"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+
+            <!-- Tab content -->
+            <TabControl.ContentTemplate>
+                <DataTemplate DataType="{x:Type vm:ProviderUninstallTabViewModel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- ── Toolbar ── -->
+                        <Border Grid.Row="0" Background="#0A1020" Padding="20,12"
+                                BorderBrush="#131E30" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Search box -->
+                                <Border CornerRadius="8" Background="#0C1828"
+                                        BorderBrush="#1A2E48" BorderThickness="1"
+                                        MaxWidth="340" HorizontalAlignment="Left"
+                                        Height="34">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="12" Foreground="#3A5A7A"
+                                                   VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                 Background="Transparent" BorderThickness="0"
+                                                 Foreground="#90B0D0" CaretBrush="#90B0D0"
+                                                 FontSize="12" Padding="8,6"
+                                                 VerticalAlignment="Center"
+                                                 VerticalContentAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Buttons -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <ui:Button Content="Charger"
+                                               Command="{Binding LoadCommand}"
+                                               IsEnabled="{Binding IsAvailable}"
+                                               FontSize="12" Padding="14,7" Margin="0,0,8,0"/>
+                                    <ui:Button Content="Tout sélectionner"
+                                               Command="{Binding SelectAllCommand}"
+                                               IsEnabled="{Binding IsAvailable}"
+                                               FontSize="12" Padding="14,7" Margin="0,0,8,0"/>
+                                    <ui:Button Content="Désélectionner"
+                                               Command="{Binding ClearSelectionCommand}"
+                                               IsEnabled="{Binding IsAvailable}"
+                                               FontSize="12" Padding="14,7" Margin="0,0,8,0"/>
+
+                                    <!-- Uninstall button (rouge) -->
+                                    <Button Command="{Binding UninstallCommand}"
+                                            IsEnabled="{Binding IsAvailable}"
+                                            FontSize="12" Padding="14,7"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="#5A1A1A"/>
+                                                <Setter Property="Foreground" Value="#F08080"/>
+                                                <Setter Property="BorderBrush" Value="#8A2020"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                                    CornerRadius="6"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                                  VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#7A2020"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsPressed" Value="True">
+                                                                    <Setter Property="Background" Value="#3A1010"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter Property="Opacity" Value="0.4"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="12" VerticalAlignment="Center"
+                                                       Margin="0,0,6,0"/>
+                                            <TextBlock VerticalAlignment="Center">
+                                                <Run Text="Désinstaller ("/>
+                                                <Run Text="{Binding SelectedCount, Mode=OneWay}"/>
+                                                <Run Text=")"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <!-- Spinner -->
+                                    <ProgressBar IsIndeterminate="True" Width="50" Height="3"
+                                                 Foreground="{Binding AccentBrush}"
+                                                 Margin="12,0,0,0" VerticalAlignment="Center"
+                                                 Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- ── Package list ── -->
+                        <Grid Grid.Row="1" Background="#070D1A">
+
+                            <!-- Empty / not loaded state -->
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Margin="0,40"
+                                        Visibility="{Binding AllItems.Count, Converter={StaticResource ZeroToVis}}">
+                                <TextBlock Text="&#xE8FA;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="48" Foreground="#141E2E"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding StatusText}" FontSize="13"
+                                           Foreground="#2A4060"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,14,0,0" TextWrapping="Wrap"
+                                           MaxWidth="400" TextAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Loaded items -->
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          Visibility="{Binding AllItems.Count, Converter={StaticResource NonZeroToVis}}">
+                                <ItemsControl ItemsSource="{Binding FilteredItems}"
+                                              Padding="20,10,20,20">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="8" Margin="0,3" Padding="14,10">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background"     Value="#0A1828"/>
+                                                        <Setter Property="BorderBrush"    Value="Transparent"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter Property="Background"     Value="#10203A"/>
+                                                                <Setter Property="BorderBrush"    Value="#1E3A5A"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                              VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Title}"
+                                                                   FontSize="12.5" Foreground="#B0CCE8"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding Id}"
+                                                                   FontSize="10" Foreground="#2A4A6A"
+                                                                   Margin="0,2,0,0"
+                                                                   Visibility="{Binding Id, Converter={StaticResource NonEmptyToVis}}"/>
+                                                    </StackPanel>
+                                                    <Border Grid.Column="2" CornerRadius="5" Padding="8,2"
+                                                            Background="#0E2030" Margin="8,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Version}"
+                                                                   FontSize="10" Foreground="#3A6090"
+                                                                   Visibility="{Binding Version, Converter={StaticResource NonEmptyToVis}}"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+
+                        <!-- ── Status bar ── -->
+                        <Border Grid.Row="2" Background="#080E1A" Padding="20,8"
+                                BorderBrush="#131E30" BorderThickness="0,1,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding StatusText}"
+                                           FontSize="11" Foreground="#4A6A8A"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ProgressText}"
+                                           FontSize="11" Foreground="#3A6080"
+                                           TextTrimming="CharacterEllipsis"
+                                           MaxWidth="500" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </TabControl.ContentTemplate>
+        </TabControl>
+    </Grid>
+</Page>

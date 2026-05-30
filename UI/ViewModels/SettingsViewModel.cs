@@ -8,24 +8,21 @@ using PureUpdate.Utils;
 
 namespace PureUpdate.UI.ViewModels;
 
-public record AccentColorOption(string Name, string Hex)
-{
-    public SolidColorBrush Brush { get; } =
-        new((Color)ColorConverter.ConvertFromString(Hex));
-}
-
 public partial class SettingsViewModel : ObservableObject
 {
     private AppSettings _settings;
 
     [ObservableProperty] private bool   _closeToTray;
     [ObservableProperty] private bool   _autoRestorePoint;
+    [ObservableProperty] private bool   _scanOnStartup;
     [ObservableProperty] private string _scanSchedule        = "Disabled";
     [ObservableProperty] private bool   _taskExists;
     [ObservableProperty] private string _schedulerStatus     = string.Empty;
     [ObservableProperty] private bool   _isApplyingSchedule;
-    [ObservableProperty] private AccentColorOption _selectedAccentColor = null!;
-    [ObservableProperty] private string            _selectedFontFamily  = "Segoe UI";
+    [ObservableProperty] private AppTheme  _selectedTheme   = null!;
+    [ObservableProperty] private string    _selectedFontFamily = "Segoe UI";
+    [ObservableProperty] private string    _customAccentHex  = string.Empty;
+    [ObservableProperty] private string    _customHexStatus  = string.Empty;
 
     public string ScanScheduleDisplay => ScanSchedule switch
     {
@@ -34,25 +31,19 @@ public partial class SettingsViewModel : ObservableObject
         _        => "Désactivé",
     };
 
-    public List<AccentColorOption> AccentColorOptions { get; } =
-    [
-        new("Cyan électrique", "#00B7FF"),
-        new("Bleu Royal",      "#0078D4"),
-        new("Violet",          "#9B59B6"),
-        new("Émeraude",        "#2ECC71"),
-        new("Orange",          "#FF8C00"),
-        new("Rouge",           "#E74C3C"),
-        new("Or",              "#F1C40F"),
-        new("Rose",            "#E91E63"),
-    ];
+    public IReadOnlyList<AppTheme> Themes     => ThemeService.Presets;
 
     public List<string> FontFamilies { get; } =
     [
         "Segoe UI",
         "Segoe UI Variable",
+        "Roboto",
+        "Inter",
         "Arial",
         "Calibri",
         "Consolas",
+        "JetBrains Mono",
+        "Fira Code",
     ];
 
     public SettingsViewModel()
@@ -60,13 +51,14 @@ public partial class SettingsViewModel : ObservableObject
         _settings        = AppSettingsService.Load();
         CloseToTray      = _settings.CloseToTray;
         AutoRestorePoint = _settings.AutoRestorePoint;
+        ScanOnStartup    = _settings.ScanOnStartup;
         ScanSchedule     = _settings.ScanSchedule;
         TaskExists       = SchedulerService.TaskExists();
         SchedulerStatus  = TaskExists ? "Tâche planifiée active" : "Aucune tâche planifiée";
 
-        _selectedAccentColor = AccentColorOptions.FirstOrDefault(o =>
-            o.Hex.Equals(_settings.AccentColor, StringComparison.OrdinalIgnoreCase))
-            ?? AccentColorOptions[0];
+        _selectedTheme = ThemeService.Presets
+            .FirstOrDefault(t => t.Name == _settings.ThemePreset)
+            ?? ThemeService.Presets[0];
 
         _selectedFontFamily = FontFamilies.Contains(_settings.FontFamily)
             ? _settings.FontFamily
@@ -85,16 +77,26 @@ public partial class SettingsViewModel : ObservableObject
         AppSettingsService.Save(_settings);
     }
 
+    partial void OnScanOnStartupChanged(bool value)
+    {
+        _settings.ScanOnStartup = value;
+        AppSettingsService.Save(_settings);
+    }
+
     partial void OnScanScheduleChanged(string value)
     {
         OnPropertyChanged(nameof(ScanScheduleDisplay));
     }
 
-    partial void OnSelectedAccentColorChanged(AccentColorOption value)
+    partial void OnSelectedThemeChanged(AppTheme value)
     {
-        _settings.AccentColor = value.Hex;
+        _settings.ThemePreset  = value.Name;
+        _settings.AccentColor  = value.Accent;
+        _settings.AppBgColor   = value.AppBg;
+        _settings.CardBg1Color = value.CardBg1;
+        _settings.CardBg2Color = value.CardBg2;
         AppSettingsService.Save(_settings);
-        ThemeService.Apply(_settings);
+        ThemeService.ApplyTheme(value, SelectedFontFamily);
     }
 
     partial void OnSelectedFontFamilyChanged(string value)
@@ -102,6 +104,27 @@ public partial class SettingsViewModel : ObservableObject
         _settings.FontFamily = value;
         AppSettingsService.Save(_settings);
         ThemeService.Apply(_settings);
+    }
+
+    [RelayCommand]
+    private void ApplyCustomAccent()
+    {
+        var hex = CustomAccentHex.Trim();
+        if (!hex.StartsWith('#')) hex = "#" + hex;
+        try
+        {
+            var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
+            _ = color;
+            _settings.AccentColor  = hex;
+            _settings.ThemePreset  = "Custom";
+            AppSettingsService.Save(_settings);
+            ThemeService.Apply(_settings);
+            CustomHexStatus = "Couleur appliquée !";
+        }
+        catch
+        {
+            CustomHexStatus = "Hex invalide. Exemple : #FF6B35";
+        }
     }
 
     [RelayCommand]

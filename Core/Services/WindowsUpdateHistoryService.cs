@@ -48,12 +48,24 @@ public static class WindowsUpdateHistoryService
                         5 => HistoryStatus.Aborted,
                         _ => HistoryStatus.Unknown,
                     };
+                    string errorCode = "";
+                    if (status is HistoryStatus.Failed or HistoryStatus.Aborted)
+                    {
+                        try
+                        {
+                            int hresult = (int)entry.HResult;
+                            if (hresult != 0) errorCode = $"0x{(uint)hresult:X8}";
+                        }
+                        catch { /* HResult non disponible selon la version WUAPI */ }
+                    }
+
                     items.Add(new HistoryItem
                     {
-                        Title    = (string)entry.Title,
-                        Date     = (DateTime)entry.Date,
-                        Status   = status,
-                        Provider = "Windows Update",
+                        Title     = (string)entry.Title,
+                        Date      = (DateTime)entry.Date,
+                        Status    = status,
+                        Provider  = "Windows Update",
+                        ErrorCode = errorCode,
                     });
                 }
 

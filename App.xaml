@@ -20,12 +20,22 @@
                 TrueBrush="#FF4CAF50" FalseBrush="#FFE53935"/>
             <conv:BoolToBrushConverter x:Key="NetworkBrush"
                 TrueBrush="#FF4CAF50" FalseBrush="#FFE53935"/>
+            <conv:IntNonZeroToVisibilityConverter x:Key="NonZeroToVis"/>
+            <conv:IntZeroToVisibilityConverter    x:Key="ZeroToVis"/>
+            <conv:StringNotEmptyToVisibilityConverter x:Key="NonEmptyToVis"/>
+            <conv:HexToBrushConverter x:Key="HexToBrushConv"/>
 
             <!-- Brand colors -->
             <Color x:Key="AccentBlue">#FF0078D4</Color>
             <Color x:Key="ElectricCyan">#FF00B7FF</Color>
             <SolidColorBrush x:Key="AccentBlueBrush"   Color="{StaticResource AccentBlue}"/>
             <SolidColorBrush x:Key="ElectricCyanBrush" Color="{StaticResource ElectricCyan}"/>
+
+            <!-- Dynamic theme resources (updated by ThemeService) -->
+            <Color x:Key="AppBgColor">#FF060C18</Color>
+            <Color x:Key="CardBg1Color">#FF091525</Color>
+            <Color x:Key="CardBg2Color">#FF0D1C2E</Color>
+            <SolidColorBrush x:Key="AppBgBrush" Color="#FF060C18"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

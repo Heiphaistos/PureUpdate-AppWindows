@@ -96,6 +96,23 @@
 
                     <Rectangle Height="1" Fill="#0E1A28" Margin="0,0,0,12"/>
 
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Analyser au démarrage"
+                                       FontSize="13" Foreground="#C0D8F0"/>
+                            <TextBlock Text="Lance automatiquement l'analyse de toutes les mises à jour à chaque ouverture de l'application."
+                                       FontSize="11" Foreground="#3A5878" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding ScanOnStartup}"
+                                         VerticalAlignment="Center" Margin="16,0,0,0"/>
+                    </Grid>
+
+                    <Rectangle Height="1" Fill="#0E1A28" Margin="0,0,0,12"/>
+
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -153,14 +170,14 @@
                                    Foreground="#E0EEFF" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <!-- Couleur d'accentuation -->
-                    <TextBlock Text="Couleur d'accentuation"
+                    <!-- Thèmes prédéfinis -->
+                    <TextBlock Text="Thème de l'interface"
                                FontSize="12" FontWeight="SemiBold"
                                Foreground="#7A9EC0" Margin="0,0,0,10"/>
-                    <ListBox ItemsSource="{Binding AccentColorOptions}"
-                             SelectedItem="{Binding SelectedAccentColor}"
+                    <ListBox ItemsSource="{Binding Themes}"
+                             SelectedItem="{Binding SelectedTheme}"
                              Background="Transparent" BorderThickness="0"
-                             Margin="0,0,0,18">
+                             Margin="0,0,0,14">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel/>
@@ -169,20 +186,45 @@
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Padding" Value="0"/>
-                                <Setter Property="Margin"  Value="0,0,10,0"/>
+                                <Setter Property="Margin"  Value="0,0,8,8"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListBoxItem">
-                                            <Grid Width="38" Height="38" Cursor="Hand"
-                                                  ToolTip="{Binding Name}">
-                                                <Ellipse x:Name="Ring" Width="38" Height="38"
-                                                         Stroke="{Binding Brush}" StrokeThickness="2.5"
-                                                         Opacity="0"/>
-                                                <Ellipse Width="28" Height="28" Fill="{Binding Brush}"/>
-                                            </Grid>
+                                            <Border x:Name="Bd" Width="106" Height="70"
+                                                    CornerRadius="9"
+                                                    Background="{Binding AppBgBrush}"
+                                                    BorderThickness="1.5"
+                                                    BorderBrush="#141C28"
+                                                    Cursor="Hand"
+                                                    ToolTip="{Binding Name}">
+                                                <Grid>
+                                                    <!-- Accent dot -->
+                                                    <Ellipse Width="20" Height="20"
+                                                             Fill="{Binding AccentBrush}"
+                                                             HorizontalAlignment="Left"
+                                                             VerticalAlignment="Top"
+                                                             Margin="9,9,0,0"
+                                                             Opacity="0.9"/>
+                                                    <!-- Theme name -->
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontSize="10" FontWeight="SemiBold"
+                                                               Foreground="White" Opacity="0.85"
+                                                               HorizontalAlignment="Left"
+                                                               VerticalAlignment="Bottom"
+                                                               Margin="9,0,4,8"
+                                                               TextWrapping="Wrap"
+                                                               LineHeight="13"/>
+                                                </Grid>
+                                            </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Ring" Property="Opacity" Value="1"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush"
+                                                            Value="{Binding AccentBrush}"/>
+                                                    <Setter TargetName="Bd" Property="BorderThickness"
+                                                            Value="2"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -191,6 +233,28 @@
                             </Style>
                         </ListBox.ItemContainerStyle>
                     </ListBox>
+
+                    <Rectangle Height="1" Fill="#0E1A28" Margin="0,2,0,16"/>
+
+                    <!-- Couleur d'accentuation personnalisée -->
+                    <TextBlock Text="Couleur d'accentuation personnalisée"
+                               FontSize="12" FontWeight="SemiBold"
+                               Foreground="#7A9EC0" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <Border Width="34" Height="34" CornerRadius="6" Margin="0,0,10,0"
+                                Background="{Binding CustomAccentHex, Converter={StaticResource HexToBrushConv}}"
+                                BorderThickness="1" BorderBrush="#1A2E48"/>
+                        <ui:TextBox Text="{Binding CustomAccentHex, UpdateSourceTrigger=PropertyChanged}"
+                                    PlaceholderText="#RRGGBB ou RRGGBB"
+                                    Width="150" VerticalAlignment="Center" Margin="0,0,10,0"
+                                    FontFamily="Consolas" FontSize="12"/>
+                        <ui:Button Content="Appliquer"
+                                   Command="{Binding ApplyCustomAccentCommand}"
+                                   Padding="12,6" FontSize="11.5"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding CustomHexStatus}"
+                               FontSize="11" Foreground="#3A6090" Margin="0,0,0,16"/>
 
                     <Rectangle Height="1" Fill="#0E1A28" Margin="0,0,0,16"/>
 
@@ -209,7 +273,7 @@
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Padding" Value="0"/>
-                                <Setter Property="Margin"  Value="0,0,8,0"/>
+                                <Setter Property="Margin"  Value="0,0,8,8"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListBoxItem">
@@ -221,7 +285,7 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background"  Value="#0F0A2040"/>
+                                                    <Setter TargetName="Bd" Property="Background"  Value="#0F1020"/>
                                                     <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ElectricCyanBrush}"/>
                                                 </Trigger>
                                                 <Trigger Property="IsMouseOver" Value="True">

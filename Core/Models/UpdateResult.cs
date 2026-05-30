@@ -7,4 +7,5 @@ public sealed record UpdateResult(
     int FailedCount    = 0,
     IReadOnlyList<string>? Errors       = null,
     int ManualCount    = 0,
-    IReadOnlyList<string>? ManualErrors = null);
+    IReadOnlyList<string>? ManualErrors = null,
+    IReadOnlyDictionary<string, string>? ErrorCodes = null);

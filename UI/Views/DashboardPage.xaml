@@ -7,124 +7,159 @@
     Background="Transparent">
 
     <Page.Resources>
-        <!-- Slim rounded determinate progress bar -->
         <Style x:Key="SlimBar" TargetType="ProgressBar">
-            <Setter Property="Height"          Value="5"/>
+            <Setter Property="Height"          Value="3"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Background"      Value="#101C2E"/>
+            <Setter Property="Background"      Value="#0C1828"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ProgressBar">
                         <Grid>
-                            <Border x:Name="PART_Track"
-                                    Background="{TemplateBinding Background}"
-                                    CornerRadius="3"/>
-                            <Border x:Name="PART_Indicator"
-                                    Background="{TemplateBinding Foreground}"
-                                    CornerRadius="3"
-                                    HorizontalAlignment="Left"/>
+                            <Border x:Name="PART_Track" Background="{TemplateBinding Background}" CornerRadius="2"/>
+                            <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}"
+                                    CornerRadius="2" HorizontalAlignment="Left"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="StatusPill" TargetType="Border">
+            <Setter Property="CornerRadius"   Value="6"/>
+            <Setter Property="Padding"        Value="10,3"/>
+            <Setter Property="Background"     Value="#101C2E"/>
+        </Style>
     </Page.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="False">
-        <StackPanel Margin="24,20,24,24">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="False"
+                  Background="{DynamicResource AppBgBrush}">
+        <StackPanel Margin="28,22,28,28">
 
-            <!-- ── Page header + global actions ── -->
-            <Grid Margin="0,0,0,18">
+            <!-- ── Page header ── -->
+            <Grid Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Tableau de bord"
-                               FontSize="22" FontWeight="SemiBold"
-                               Foreground="#C8E0F8"/>
+                    <TextBlock FontSize="22" FontWeight="SemiBold" Foreground="#C8E0F8">
+                        <Run Text="Tableau de bord"/>
+                    </TextBlock>
                     <TextBlock Text="Gestion centralisée des mises à jour Windows"
-                               FontSize="11" Foreground="#4A6A8A" Margin="0,2,0,0"/>
+                               FontSize="11" Foreground="#2E4A60" Margin="0,3,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <ui:Button Content="Analyser tout"
-                               Command="{Binding ScanAllCommand}"
-                               Appearance="Primary"
-                               FontSize="12.5" Padding="16,8" Margin="0,0,8,0"/>
-                    <ui:Button Content="Tout installer"
-                               Command="{Binding InstallAllCommand}"
-                               FontSize="12.5" Padding="16,8"/>
-                    <ProgressBar IsIndeterminate="True" Width="60" Height="3"
-                                 Margin="12,0,0,0" VerticalAlignment="Center"
+                    <ui:Button Appearance="Primary" FontSize="12.5" Padding="18,9" Margin="0,0,8,0"
+                               Command="{Binding ScanAllCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE773;" FontFamily="Segoe MDL2 Assets"
+                                       FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Analyser tout" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ui:Button>
+                    <ui:Button FontSize="12.5" Padding="18,9" Command="{Binding InstallAllCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets"
+                                       FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Tout installer" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ui:Button>
+                    <ProgressBar IsIndeterminate="True" Width="48" Height="3" Margin="14,0,0,0"
+                                 Foreground="#00B7FF" VerticalAlignment="Center"
                                  Visibility="{Binding IsScanningAll, Converter={StaticResource BoolToVis}}"/>
-                    <ProgressBar IsIndeterminate="True" Width="60" Height="3"
-                                 Foreground="#FF9800"
-                                 Margin="12,0,0,0" VerticalAlignment="Center"
+                    <ProgressBar IsIndeterminate="True" Width="48" Height="3" Margin="14,0,0,0"
+                                 Foreground="#FF9800" VerticalAlignment="Center"
                                  Visibility="{Binding IsInstallingAll, Converter={StaticResource BoolToVis}}"/>
                 </StackPanel>
             </Grid>
 
             <!-- ── Health + Status row ── -->
-            <Grid Margin="0,0,0,14">
+            <Grid Margin="0,0,0,16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="3*"/>
                     <ColumnDefinition Width="2*"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Health Score card -->
-                <Border Grid.Column="0" Background="#0C1828" CornerRadius="14"
-                        Margin="0,0,10,0" Padding="22,20">
+                <Border Grid.Column="0" CornerRadius="16" Margin="0,0,12,0" Padding="26,22"
+                        BorderThickness="1">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="{DynamicResource CardBg1Color}" Offset="0"/>
+                            <GradientStop Color="{DynamicResource CardBg2Color}" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.BorderBrush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#182E48" Offset="0"/>
+                            <GradientStop Color="#0E1C2E" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.BorderBrush>
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
-                            <!-- Score ring (nested ellipses) -->
-                            <Grid Width="86" Height="86" Margin="0,0,22,0" VerticalAlignment="Center">
-                                <Ellipse Width="86" Height="86"
+                            <!-- Score ring -->
+                            <Grid Width="92" Height="92" Margin="0,0,24,0" VerticalAlignment="Center">
+                                <Ellipse Width="92" Height="92"
                                          Stroke="{Binding HealthScore.ScoreBrush}"
-                                         StrokeThickness="7" Fill="Transparent"/>
-                                <Ellipse Width="70" Height="70" Fill="#0C1828"/>
+                                         StrokeThickness="7" Fill="Transparent">
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="0"
+                                                          Color="#00B7FF" Opacity="0.25"/>
+                                    </Ellipse.Effect>
+                                </Ellipse>
+                                <Ellipse Width="76" Height="76" Fill="#091525"/>
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding HealthScore.Score}"
-                                               FontSize="26" FontWeight="Bold"
+                                               FontSize="28" FontWeight="Bold"
                                                Foreground="{Binding HealthScore.ScoreBrush}"
                                                HorizontalAlignment="Center"/>
-                                    <TextBlock Text="/100" FontSize="8.5" Foreground="#3A5A7A"
-                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="/100" FontSize="9" Foreground="#1E3A54"
+                                               HorizontalAlignment="Center" Margin="0,-2,0,0"/>
                                 </StackPanel>
                             </Grid>
-
-                            <!-- Labels + progress bar -->
+                            <!-- Score labels -->
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="Score de santé du système"
-                                           FontSize="10.5" Foreground="#5070A0"/>
+                                <TextBlock Text="Score de santé système"
+                                           FontSize="10.5" Foreground="#304E6A"/>
                                 <TextBlock Text="{Binding HealthScore.Label}"
-                                           FontSize="21" FontWeight="SemiBold"
+                                           FontSize="22" FontWeight="Bold"
                                            Foreground="{Binding HealthScore.ScoreBrush}"
-                                           Margin="0,3,0,10"/>
+                                           Margin="0,4,0,12"/>
                                 <ProgressBar Value="{Binding HealthScore.Score}" Maximum="100"
                                              Style="{StaticResource SlimBar}"
                                              Foreground="{Binding HealthScore.ScoreBrush}"/>
                             </StackPanel>
                         </Grid>
-
-                        <!-- Reboot banner (collapsed when not required) -->
-                        <Border CornerRadius="9" Padding="14,10" Margin="0,16,0,0"
-                                Background="#200A0015"
-                                BorderBrush="#4DFF4040" BorderThickness="1"
+                        <!-- Reboot banner -->
+                        <Border CornerRadius="10" Padding="16,10" Margin="0,18,0,0"
+                                BorderThickness="1"
                                 Visibility="{Binding IsRebootRequired, Converter={StaticResource BoolToVis}}">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#1C0508" Offset="0"/>
+                                    <GradientStop Color="#120306" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Border.BorderBrush>
+                                <SolidColorBrush Color="#5A1A1A" Opacity="0.8"/>
+                            </Border.BorderBrush>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets"
-                                           FontSize="16" Foreground="#FF6878"
-                                           VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <Border Width="28" Height="28" CornerRadius="8"
+                                        Background="#2A0A0A" Margin="0,0,12,0">
+                                    <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="14" Foreground="#FF6060"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="REDÉMARRAGE REQUIS"
-                                               FontSize="9.5" FontWeight="Bold" Foreground="#FF6878"/>
-                                    <TextBlock Text="Redémarrez pour finaliser les mises à jour"
-                                               FontSize="10.5" Foreground="#C05060"/>
+                                               FontSize="9.5" FontWeight="Bold" Foreground="#FF6060"
+                                               />
+                                    <TextBlock Text="Redémarrez pour finaliser les mises à jour installées"
+                                               FontSize="10.5" Foreground="#803040" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -132,25 +167,43 @@
                 </Border>
 
                 <!-- Status card -->
-                <Border Grid.Column="1" Background="#0C1828" CornerRadius="14" Padding="20,20">
+                <Border Grid.Column="1" CornerRadius="16" Padding="22,22"
+                        BorderThickness="1">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="{DynamicResource CardBg1Color}" Offset="0"/>
+                            <GradientStop Color="{DynamicResource CardBg2Color}" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.BorderBrush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#182E48" Offset="0"/>
+                            <GradientStop Color="#0E1C2E" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.BorderBrush>
                     <StackPanel>
-                        <TextBlock Text="Statut système"
-                                   FontSize="10.5" Foreground="#5070A0" Margin="0,0,0,14"/>
-
-                        <!-- Admin -->
-                        <Grid Margin="0,0,0,10">
+                        <TextBlock Text="STATUT SYSTÈME"
+                                   FontSize="9.5" FontWeight="Bold" Foreground="#1E3A54"
+                                   Margin="0,0,0,16"/>
+                        <!-- Admin row -->
+                        <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
-                                     Fill="{Binding IsAdmin, Converter={StaticResource AdminBrush}}"/>
-                            <TextBlock Grid.Column="1" Text="Administrateur" FontSize="12"
-                                       Foreground="#7090B0" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                            <Border Grid.Column="2" CornerRadius="5" Padding="8,2" VerticalAlignment="Center"
-                                    Background="#14304050">
-                                <TextBlock FontSize="10" FontWeight="Bold">
+                                     Fill="{Binding IsAdmin, Converter={StaticResource AdminBrush}}">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect BlurRadius="6" ShadowDepth="0" Opacity="0.8"
+                                                      Color="{Binding IsAdmin, Converter={StaticResource AdminBrush}, ConverterParameter=color}"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <TextBlock Grid.Column="1" Text="Administrateur"
+                                       FontSize="12" Foreground="#4A6A8A"
+                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <Border Grid.Column="2" Style="{StaticResource StatusPill}">
+                                <TextBlock FontSize="9.5" FontWeight="Bold">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text"       Value="NON ADMIN"/>
@@ -166,9 +219,8 @@
                                 </TextBlock>
                             </Border>
                         </Grid>
-
-                        <!-- Network -->
-                        <Grid Margin="0,0,0,14">
+                        <!-- Network row -->
+                        <Grid Margin="0,0,0,18">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
@@ -176,11 +228,11 @@
                             </Grid.ColumnDefinitions>
                             <Ellipse Width="8" Height="8" VerticalAlignment="Center"
                                      Fill="{Binding IsNetworkAvailable, Converter={StaticResource NetworkBrush}}"/>
-                            <TextBlock Grid.Column="1" Text="Réseau" FontSize="12"
-                                       Foreground="#7090B0" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                            <Border Grid.Column="2" CornerRadius="5" Padding="8,2" VerticalAlignment="Center"
-                                    Background="#14304050">
-                                <TextBlock FontSize="10" FontWeight="Bold">
+                            <TextBlock Grid.Column="1" Text="Réseau"
+                                       FontSize="12" Foreground="#4A6A8A"
+                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <Border Grid.Column="2" Style="{StaticResource StatusPill}">
+                                <TextBlock FontSize="9.5" FontWeight="Bold">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text"       Value="HORS LIGNE"/>
@@ -196,13 +248,17 @@
                                 </TextBlock>
                             </Border>
                         </Grid>
-
-                        <!-- Separator -->
-                        <Rectangle Height="1" Fill="#1A2E48" Margin="0,0,0,12"/>
-
-                        <!-- Global status -->
+                        <Rectangle Height="1" Margin="0,0,0,14" Opacity="0.4">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="Transparent" Offset="0"/>
+                                    <GradientStop Color="#1A3050"     Offset="0.5"/>
+                                    <GradientStop Color="Transparent" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                        </Rectangle>
                         <TextBlock Text="{Binding GlobalStatus}"
-                                   FontSize="11.5" Foreground="#5070A0"
+                                   FontSize="11.5" Foreground="#2E4A60"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
@@ -217,10 +273,25 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:ProviderCardViewModel}">
-                        <Grid Margin="0,0,10,10">
-                            <Border CornerRadius="12" Background="#0C1828">
-                                <Grid Margin="22,16,18,16">
+                        <Grid Margin="0,0,12,12">
+                            <!-- Card -->
+                            <Border CornerRadius="14" BorderThickness="1">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="{DynamicResource CardBg1Color}" Offset="0"/>
+                                        <GradientStop Color="{DynamicResource CardBg2Color}" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#1A2E48" Offset="0"/>
+                                        <GradientStop Color="#0E1C30" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+
+                                <Grid Margin="22,18,18,18">
                                     <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
@@ -229,39 +300,58 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <!-- Header: name + availability badge -->
-                                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <!-- Header: name + badge -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}"
-                                                       FontSize="16" FontWeight="SemiBold"
-                                                       Foreground="#D8EEFF"/>
-                                            <TextBlock Text="{Binding Description}"
-                                                       FontSize="10.5" Foreground="#4A6A8A"
-                                                       Margin="0,2,0,0"/>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <!-- Provider color dot -->
+                                            <Ellipse Width="10" Height="10" Margin="0,0,10,0"
+                                                     Fill="{Binding AccentBrush}">
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Opacity" Value="0.4"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsAvailable}" Value="True">
+                                                                <Setter Property="Opacity" Value="1"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Ellipse.Style>
+                                            </Ellipse>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="15.5" FontWeight="SemiBold"
+                                                           Foreground="#D0E8FF"/>
+                                                <TextBlock Text="{Binding Description}"
+                                                           FontSize="10.5" Foreground="#283E56"
+                                                           Margin="0,1,0,0"/>
+                                            </StackPanel>
                                         </StackPanel>
-                                        <Border Grid.Column="1" CornerRadius="5" Padding="8,3"
-                                                Background="{Binding AccentBrush}" VerticalAlignment="Center">
+                                        <!-- Availability badge -->
+                                        <Border Grid.Column="1" CornerRadius="6" Padding="9,3"
+                                                VerticalAlignment="Center">
                                             <Border.Style>
                                                 <Style TargetType="Border">
-                                                    <Setter Property="Opacity" Value="0.3"/>
+                                                    <Setter Property="Background" Value="#1A1A1A"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsAvailable}" Value="True">
-                                                            <Setter Property="Opacity" Value="0.9"/>
+                                                            <Setter Property="Background" Value="#0D2A18"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
-                                            <TextBlock FontSize="9.5" Foreground="White" FontWeight="Bold">
+                                            <TextBlock FontSize="9.5" FontWeight="Bold">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="NON INSTALLÉ"/>
+                                                        <Setter Property="Text"       Value="NON INSTALLÉ"/>
+                                                        <Setter Property="Foreground" Value="#3A3A4A"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsAvailable}" Value="True">
-                                                                <Setter Property="Text" Value="ACTIF"/>
+                                                                <Setter Property="Text"       Value="ACTIF"/>
+                                                                <Setter Property="Foreground" Value="#3CB870"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -270,124 +360,256 @@
                                         </Border>
                                     </Grid>
 
-                                    <!-- Update count + status -->
+                                    <!-- Update count -->
                                     <Grid Grid.Row="1" Margin="0,0,0,4">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="{Binding UpdateCount, Converter={StaticResource UpdateCountConv}}"
-                                                   FontSize="28" FontWeight="Bold"
+                                                   FontSize="30" FontWeight="Bold"
                                                    Foreground="{Binding AccentBrush}"
-                                                   VerticalAlignment="Center"/>
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasUpdates}" Value="True">
+                                                            <Setter Property="Effect">
+                                                                <Setter.Value>
+                                                                    <DropShadowEffect BlurRadius="10"
+                                                                                      ShadowDepth="0"
+                                                                                      Color="#00B7FF"
+                                                                                      Opacity="0.4"/>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                         <TextBlock Grid.Column="1" Text="{Binding StatusText}"
-                                                   FontSize="11" Foreground="#5070A0"
-                                                   VerticalAlignment="Bottom" Margin="8,0,0,3"/>
+                                                   FontSize="11" Foreground="#304860"
+                                                   VerticalAlignment="Bottom" Margin="8,0,0,4"/>
                                     </Grid>
 
-                                    <!-- Active progress bar -->
-                                    <ProgressBar Grid.Row="2" IsIndeterminate="True" Height="2"
-                                                 Margin="0,0,0,6"
-                                                 Foreground="{Binding AccentBrush}"
-                                                 Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}"/>
+                                    <!-- Progress bar (active) -->
+                                    <Grid Grid.Row="2" Margin="0,0,0,6"
+                                          Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ProgressBar Height="3" Maximum="100"
+                                                     IsIndeterminate="{Binding IsProgressIndeterminate}"
+                                                     Value="{Binding ProgressValue}"
+                                                     Foreground="{Binding AccentBrush}"
+                                                     VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding ProgressLabel}"
+                                                   FontSize="9.5" Foreground="#3A6080"
+                                                   VerticalAlignment="Center" Margin="8,0,0,0"
+                                                   Visibility="{Binding ProgressLabel,
+                                                       Converter={StaticResource NonEmptyToVis}}"/>
+                                    </Grid>
 
-                                    <!-- Progress detail -->
+                                    <!-- Progress text -->
                                     <TextBlock Grid.Row="3" Text="{Binding ProgressText}"
-                                               FontSize="10" Foreground="#4A6A8A"
-                                               TextTrimming="CharacterEllipsis"
-                                               Margin="0,0,0,6"/>
+                                               FontSize="10.5" Foreground="#2A4060"
+                                               TextTrimming="CharacterEllipsis" Margin="0,0,0,6"/>
+
+                                    <!-- Search box -->
+                                    <Border Grid.Row="4" Margin="0,0,0,6"
+                                            CornerRadius="8" Background="#050E1A"
+                                            BorderBrush="#0E1C2E" BorderThickness="1"
+                                            Visibility="{Binding HasUpdates, Converter={StaticResource BoolToVis}}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="11" Foreground="#1E3A54"
+                                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                                     Background="Transparent" BorderThickness="0"
+                                                     Foreground="#6090B0" FontSize="11.5"
+                                                     VerticalAlignment="Center" Padding="8,6"
+                                                     CaretBrush="#00B7FF">
+                                                <TextBox.Style>
+                                                    <Style TargetType="TextBox">
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="TextBox">
+                                                                    <ScrollViewer x:Name="PART_ContentHost" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                </TextBox.Style>
+                                            </TextBox>
+                                        </Grid>
+                                    </Border>
 
                                     <!-- Updates list -->
-                                    <Border Grid.Row="4" MaxHeight="150" Margin="0,0,0,10"
+                                    <Border Grid.Row="5" MaxHeight="160" Margin="0,0,0,12"
                                             Visibility="{Binding HasUpdates, Converter={StaticResource BoolToVis}}">
                                         <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                            <ItemsControl ItemsSource="{Binding Updates}">
+                                            <ItemsControl ItemsSource="{Binding FilteredUpdates}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Grid Margin="0,2">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                                <ColumnDefinition Width="*"/>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                            </Grid.ColumnDefinitions>
-                                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                      VerticalAlignment="Center"
-                                                                      Margin="0,0,6,0"/>
-                                                            <TextBlock Grid.Column="1"
-                                                                       Text="{Binding Title}"
-                                                                       FontSize="11" Foreground="#90B0D0"
-                                                                       VerticalAlignment="Center"
-                                                                       TextTrimming="CharacterEllipsis"/>
-                                                            <TextBlock Grid.Column="2"
-                                                                       FontSize="10" Foreground="#406080"
-                                                                       Margin="8,0,0,0" VerticalAlignment="Center">
-                                                                <Run Text="{Binding Version, Mode=OneWay}"/>
-                                                                <Run Text="→"/>
-                                                                <Run Foreground="#5CB85C"
-                                                                     Text="{Binding AvailableVersion, Mode=OneWay}"/>
-                                                            </TextBlock>
-                                                        </Grid>
+                                                        <Border x:Name="ItemRow" CornerRadius="6" Margin="0,2" Padding="10,6"
+                                                                Background="#071018">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="{Binding Title}"
+                                                                           FontSize="11.5" Foreground="#7090B0"
+                                                                           VerticalAlignment="Center"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock Grid.Column="2"
+                                                                           FontSize="10.5" Foreground="#2A4060"
+                                                                           Margin="8,0,0,0" VerticalAlignment="Center">
+                                                                    <Run Text="{Binding Version, Mode=OneWay}"/>
+                                                                    <Run Text="→"/>
+                                                                    <Run Foreground="{Binding DataContext.AccentBrush,
+                                                                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                         Text="{Binding AvailableVersion, Mode=OneWay}"/>
+                                                                </TextBlock>
+                                                                <!-- Bouton masquer -->
+                                                                <Button Grid.Column="3"
+                                                                        ToolTip="Masquer cette mise à jour"
+                                                                        Cursor="Hand"
+                                                                        Margin="6,0,0,0"
+                                                                        Command="{Binding DataContext.HideItemCommand,
+                                                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <Button.Style>
+                                                                        <Style TargetType="Button">
+                                                                            <Setter Property="Background"      Value="Transparent"/>
+                                                                            <Setter Property="BorderThickness" Value="0"/>
+                                                                            <Setter Property="Padding"         Value="4,2"/>
+                                                                            <Setter Property="Opacity"         Value="0.35"/>
+                                                                            <Setter Property="Template">
+                                                                                <Setter.Value>
+                                                                                    <ControlTemplate TargetType="Button">
+                                                                                        <Border Background="{TemplateBinding Background}"
+                                                                                                CornerRadius="4"
+                                                                                                Padding="{TemplateBinding Padding}">
+                                                                                            <ContentPresenter HorizontalAlignment="Center"
+                                                                                                              VerticalAlignment="Center"/>
+                                                                                        </Border>
+                                                                                    </ControlTemplate>
+                                                                                </Setter.Value>
+                                                                            </Setter>
+                                                                            <Style.Triggers>
+                                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                                    <Setter Property="Opacity"     Value="1"/>
+                                                                                    <Setter Property="Background"  Value="#1C0A0A"/>
+                                                                                </Trigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Button.Style>
+                                                                    <TextBlock Text="✕" FontSize="10" Foreground="#FF6060"/>
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </ScrollViewer>
                                     </Border>
 
-                                    <!-- Buttons -->
-                                    <WrapPanel Grid.Row="5">
+                                    <!-- Action buttons -->
+                                    <WrapPanel Grid.Row="6">
                                         <ui:Button Content="Analyser"
                                                    Command="{Binding ScanCommand}"
                                                    IsEnabled="{Binding IsAvailable}"
-                                                   Margin="0,0,7,0" FontSize="11.5" Padding="12,6"/>
+                                                   Margin="0,0,6,0" FontSize="11.5" Padding="12,6"/>
                                         <ui:Button Content="Installer tout"
                                                    Command="{Binding InstallCommand}"
                                                    Appearance="Primary"
                                                    IsEnabled="{Binding IsAvailable}"
-                                                   Margin="0,0,7,0" FontSize="11.5" Padding="12,6"/>
+                                                   Margin="0,0,6,0" FontSize="11.5" Padding="12,6"/>
                                         <ui:Button Content="Installer le gestionnaire"
                                                    Command="{Binding InstallSelfCommand}"
                                                    Appearance="Caution"
-                                                   FontSize="11" Padding="10,6" Margin="0,0,7,0"
+                                                   FontSize="11" Padding="10,6" Margin="0,0,6,0"
                                                    Visibility="{Binding CanInstallSelf, Converter={StaticResource BoolToVis}}"/>
-                                        <ui:Button Content="Désinstaller"
+                                        <ui:Button Content="Désinstaller gestionnaire"
                                                    Command="{Binding UninstallSelfCommand}"
                                                    FontSize="11" Padding="10,6"
                                                    Visibility="{Binding CanUninstallSelf, Converter={StaticResource BoolToVis}}"/>
                                     </WrapPanel>
                                 </Grid>
                             </Border>
-                            <!-- Left accent strip -->
+
+                            <!-- Left accent strip with glow -->
                             <Border Width="4" HorizontalAlignment="Left"
-                                    CornerRadius="12,0,0,12"
-                                    Background="{Binding AccentBrush}"/>
+                                    CornerRadius="14,0,0,14"
+                                    Background="{Binding AccentBrush}">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0"
+                                                      Color="#00B7FF" Opacity="0.5"/>
+                                </Border.Effect>
+                            </Border>
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
             <!-- ── SDI Offline card ── -->
-            <Grid Margin="0,2,10,0"
+            <Grid Margin="0,2,12,0"
                   Visibility="{Binding SdiAvailable, Converter={StaticResource BoolToVis}}">
-                <Border CornerRadius="12" Background="#0A1020" Padding="20,14">
+                <Border CornerRadius="14" Padding="22,16" BorderThickness="1">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#0A1020" Offset="0"/>
+                            <GradientStop Color="#0C1428" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.BorderBrush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#1A2A3A" Offset="0"/>
+                            <GradientStop Color="#0E1828" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.BorderBrush>
                     <Grid>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <StackPanel>
+                        <Border Width="36" Height="36" CornerRadius="10"
+                                Background="#1A1208" Margin="0,0,16,0">
+                            <TextBlock Text="&#xE7F4;" FontFamily="Segoe MDL2 Assets"
+                                       FontSize="17" Foreground="#FF8C00"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="Mode Hors-Ligne — Snappy Driver Installer"
-                                       FontSize="14" FontWeight="SemiBold" Foreground="#D8EEFF"/>
+                                       FontSize="14" FontWeight="SemiBold" Foreground="#D0E8FF"/>
                             <TextBlock Text="{Binding SdiStatus}"
-                                       FontSize="11" Foreground="#5070A0" Margin="0,4,0,0"/>
+                                       FontSize="11" Foreground="#304860" Margin="0,3,0,0"/>
                         </StackPanel>
-                        <ui:Button Grid.Column="1" Content="Lancer SDI"
+                        <ui:Button Grid.Column="2" Content="Lancer SDI"
                                    Command="{Binding RunSdiCommand}"
-                                   Padding="14,7" FontSize="12" VerticalAlignment="Center"/>
+                                   Padding="16,8" FontSize="12" VerticalAlignment="Center"/>
                     </Grid>
                 </Border>
-                <Border Width="4" HorizontalAlignment="Left"
-                        CornerRadius="12,0,0,12"
-                        Background="#FF6B00"/>
+                <Border Width="4" HorizontalAlignment="Left" CornerRadius="14,0,0,14"
+                        Background="#FF6B00">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#FF6B00" Opacity="0.5"/>
+                    </Border.Effect>
+                </Border>
             </Grid>
 
         </StackPanel>

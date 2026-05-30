@@ -9,7 +9,8 @@ public sealed record HistoryItem
     public HistoryStatus   Status   { get; init; }
     public string          Provider { get; init; } = string.Empty;
     public string          Version  { get; init; } = string.Empty;
-    public string          Id       { get; init; } = string.Empty;
+    public string          Id        { get; init; } = string.Empty;
+    public string          ErrorCode { get; init; } = string.Empty;
 
     public string StatusLabel => Status switch
     {

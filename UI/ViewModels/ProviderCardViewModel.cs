@@ -1,4 +1,7 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Text.RegularExpressions;
+using System.Windows.Data;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -26,9 +29,20 @@ public partial class ProviderCardViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsActive))]
     private bool _isManaging;
-    [ObservableProperty] private string _statusText   = "Prêt";
-    [ObservableProperty] private string _progressText = string.Empty;
+    [ObservableProperty] private string _statusText              = "Prêt";
+    [ObservableProperty] private string _progressText            = string.Empty;
     [ObservableProperty] private bool   _isAvailable;
+    [ObservableProperty] private bool   _isProgressIndeterminate = true;
+    [ObservableProperty] private int    _progressValue;
+    [ObservableProperty] private string _progressLabel           = string.Empty;
+
+    private static readonly Regex _progressRx =
+        new(@"^\[(\d+)/(\d+)\]\s*(.*)", RegexOptions.Compiled);
+
+    [ObservableProperty] private string _searchText = string.Empty;
+    public ICollectionView FilteredUpdates { get; }
+
+    partial void OnSearchTextChanged(string _) => FilteredUpdates.Refresh();
 
     public string Name        => _provider.Name;
     public string Description => _provider.Description;
@@ -51,6 +65,12 @@ public partial class ProviderCardViewModel : ObservableObject
         _selfManaged = provider as ISelfManagedProvider;
         _isAvailable = provider.IsAvailable;
         AccentBrush  = HexToBrush(provider.AccentHex);
+
+        FilteredUpdates = CollectionViewSource.GetDefaultView(Updates);
+        FilteredUpdates.Filter = obj =>
+            obj is UpdateItem item &&
+            (string.IsNullOrWhiteSpace(SearchText) ||
+             item.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
 
         Updates.CollectionChanged += (_, _) =>
         {
@@ -79,6 +99,8 @@ public partial class ProviderCardViewModel : ObservableObject
         try
         {
             var found = await _provider.ScanAsync(_cts.Token);
+            // Exclure les mises à jour masquées par l'utilisateur
+            found = found.Where(i => !HiddenUpdatesStore.IsHidden(i.Id)).ToList();
             foreach (var item in found) Updates.Add(item);
             StatusText = found.Count > 0 ? $"{found.Count} mise(s) à jour" : "À jour";
         }
@@ -101,9 +123,30 @@ public partial class ProviderCardViewModel : ObservableObject
         Cancel();
         _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
-        IsInstalling = true;
-        StatusText   = "Installation...";
-        var progress = new Progress<string>(msg => ProgressText = msg);
+        IsInstalling             = true;
+        StatusText               = "Installation...";
+        IsProgressIndeterminate  = true;
+        ProgressValue            = 0;
+        ProgressLabel            = string.Empty;
+
+        var progress = new Progress<string>(msg =>
+        {
+            var m = _progressRx.Match(msg);
+            if (m.Success
+                && int.TryParse(m.Groups[1].Value, out int cur)
+                && int.TryParse(m.Groups[2].Value, out int tot)
+                && tot > 0)
+            {
+                IsProgressIndeterminate = false;
+                ProgressValue           = (int)Math.Round((double)cur / tot * 100);
+                ProgressLabel           = $"{cur} / {tot}";
+                ProgressText            = m.Groups[3].Value;
+            }
+            else
+            {
+                ProgressText = msg;
+            }
+        });
 
         try
         {
@@ -149,7 +192,10 @@ public partial class ProviderCardViewModel : ObservableObject
                 // Alimenter le store d'erreurs global (visible depuis l'onglet Erreurs)
                 var ts = DateTime.Now;
                 foreach (var title in result.Errors ?? [])
-                    InstallErrorStore.Add(new InstallError(ts, Name, title, "Erreur d'installation"));
+                {
+                    string code = result.ErrorCodes?.TryGetValue(title, out var c) == true ? c : "";
+                    InstallErrorStore.Add(new InstallError(ts, Name, title, "Erreur d'installation", code));
+                }
                 foreach (var title in result.ManualErrors ?? [])
                     InstallErrorStore.Add(new InstallError(ts, Name, title, "Installation manuelle requise"));
             }
@@ -158,13 +204,24 @@ public partial class ProviderCardViewModel : ObservableObject
         catch (Exception ex) { Logger.Error($"[{Name}] Install: {ex.Message}"); StatusText = "Erreur"; }
         finally
         {
-            IsInstalling = false;
-            ProgressText = string.Empty;
+            IsInstalling            = false;
+            ProgressText            = string.Empty;
+            IsProgressIndeterminate = true;
+            ProgressValue           = 0;
+            ProgressLabel           = string.Empty;
             InstallCommand.NotifyCanExecuteChanged();
         }
     }
 
     private bool CanInstall() => !IsInstalling && IsAvailable && Updates.Any(u => u.IsSelected);
+
+    [RelayCommand]
+    private void HideItem(UpdateItem item)
+    {
+        HiddenUpdatesStore.Hide(item.Id);
+        Updates.Remove(item);
+        Logger.Info($"[{Name}] Masqué: {item.Title} ({item.Id})");
+    }
 
     // --- Install/Uninstall the provider itself ---
 

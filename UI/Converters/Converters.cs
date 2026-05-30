@@ -52,3 +52,50 @@ public sealed class LogLevelToBrushConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }
+
+// int > 0 → Visible, 0 → Collapsed
+[ValueConversion(typeof(int), typeof(Visibility))]
+public sealed class IntNonZeroToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is int n && n > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+// int == 0 → Visible, > 0 → Collapsed
+[ValueConversion(typeof(int), typeof(Visibility))]
+public sealed class IntZeroToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is int n && n == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+// string hex (#RRGGBB) → SolidColorBrush
+[ValueConversion(typeof(string), typeof(SolidColorBrush))]
+public sealed class HexToBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        try { return new SolidColorBrush((Color)ColorConverter.ConvertFromString((string)value)); }
+        catch { return new SolidColorBrush(Colors.Gray); }
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+// string non-vide → Visible, sinon Collapsed
+[ValueConversion(typeof(string), typeof(Visibility))]
+public sealed class StringNotEmptyToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => !string.IsNullOrWhiteSpace(value as string) ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}

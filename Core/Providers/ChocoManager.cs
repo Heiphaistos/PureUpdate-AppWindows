@@ -4,7 +4,7 @@ using PureUpdate.Utils;
 
 namespace PureUpdate.Core.Providers;
 
-public sealed class ChocoManager : CliProviderBase, IUpdateProvider, ISelfManagedProvider
+public sealed class ChocoManager : CliProviderBase, IUpdateProvider, ISelfManagedProvider, IUninstallProvider
 {
     public string Name        => "Chocolatey";
     public string Description => "Gestionnaire de paquets Chocolatey";
@@ -66,7 +66,7 @@ public sealed class ChocoManager : CliProviderBase, IUpdateProvider, ISelfManage
         progress?.Report("Mise à jour de tous les paquets Chocolatey...");
         try
         {
-            var output  = await RunAsync("choco", "upgrade all -y --no-color", progress, ct);
+            var output  = await RunAsync("choco", "upgrade all -y --no-color --accept-license", progress, ct);
             bool success = !output.Contains("Failures", StringComparison.OrdinalIgnoreCase);
             Logger.Info("[Chocolatey] Upgrade terminé");
             return new UpdateResult(success, success ? "Réussi" : "Erreurs détectées", items.Count(i => i.IsSelected));
@@ -125,6 +125,37 @@ $machine = ($machine -split ';' | Where-Object { $_ -notlike '*chocolatey*' }) -
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { Logger.Error($"[Chocolatey] UninstallSelf: {ex.Message}"); return false; }
+    }
+
+    public async Task<UninstallResult> UninstallPackagesAsync(
+        List<HistoryItem>  items,
+        IProgress<string>? progress,
+        CancellationToken  ct)
+    {
+        if (!IsAvailable) return new UninstallResult(false, "Chocolatey non disponible");
+
+        int uninstalled = 0, failed = 0;
+        var errors = new List<string>();
+
+        foreach (var item in items)
+        {
+            ct.ThrowIfCancellationRequested();
+            progress?.Report($"Désinstallation: {item.Title}...");
+            try
+            {
+                var (output, exitCode) = await RunWithCodeAsync("choco",
+                    $"uninstall {item.Id} -y --no-color",
+                    progress, ct);
+
+                bool ok = exitCode == 0 && !output.Contains("Failures", StringComparison.OrdinalIgnoreCase);
+                if (ok) { uninstalled++; Logger.Info($"[Chocolatey] Désinstallé: {item.Title}"); }
+                else { failed++; errors.Add(item.Title); Logger.Warn($"[Chocolatey] Échec désinstall {item.Title}: exit {exitCode}"); }
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex) { failed++; errors.Add(item.Title); Logger.Error($"[Chocolatey] Désinstall {item.Title}: {ex.Message}"); }
+        }
+
+        return new UninstallResult(failed == 0, $"{uninstalled} désinstallé(s), {failed} erreur(s)", uninstalled, failed, errors);
     }
 
     public async Task<List<HistoryItem>> GetInstalledPackagesAsync(CancellationToken ct = default)
