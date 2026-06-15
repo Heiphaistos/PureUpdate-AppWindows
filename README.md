@@ -2,7 +2,7 @@
 
 ## Démonstration
 
-https://github.com/heiphaistos44-crypto/PureUpdate-/releases/download/v1.4.0/pureupdate.mp4
+https://github.com/heiphaistos44-crypto/PureUpdate-/raw/main/assets/demo.mp4
 
 
 ![Version](https://img.shields.io/badge/version-1.4.0-blue?style=flat-square)
