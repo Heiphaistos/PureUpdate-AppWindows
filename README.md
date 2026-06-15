@@ -2,7 +2,9 @@
 
 ## Démonstration
 
-https://github.com/heiphaistos44-crypto/PureUpdate-/raw/main/assets/demo.mp4
+![Apercu](assets/demo.gif)
+
+[▶ Voir la démonstration complète](https://github.com/heiphaistos44-crypto/PureUpdate-/raw/main/assets/demo.mp4)
 
 
 ![Version](https://img.shields.io/badge/version-1.4.0-blue?style=flat-square)
