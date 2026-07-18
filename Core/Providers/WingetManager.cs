@@ -28,9 +28,9 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
         Logger.Info("[Winget] Scan des mises à jour...");
         try
         {
-            var output = await RunAsync("winget",
+            var output = await RunWideAsync(
                 "upgrade --include-unknown --accept-source-agreements --disable-interactivity",
-                ct: ct);
+                ct);
             items = ParseUpgradeTable(output);
             Logger.Info($"[Winget] {items.Count} mise(s) à jour détectée(s)");
         }
@@ -78,16 +78,36 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
             progress?.Report($"[{idx}/{total}] {item.Title}...");
             try
             {
+                // La table winget tronque les IDs longs avec '…' quand la sortie est
+                // redirigée (largeur 120) : résoudre l'ID complet avant l'upgrade
+                string id = item.Id;
+                if (id.Contains('…'))
+                    id = await ResolveFullIdAsync(id, ct);
+
                 var (output, exitCode) = await RunWithCodeAsync("winget",
-                    $"upgrade --id \"{item.Id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
+                    $"upgrade --id \"{id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
                     progress, ct);
+
+                // 0x8A150014 = NO_APPLICATIONS_FOUND : ID inexact (troncature) → résoudre puis retry
+                if (exitCode == -1978335212)
+                {
+                    var resolved = await ResolveFullIdAsync(id, ct);
+                    if (!resolved.Equals(id, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Logger.Warn($"[Winget] {item.Title}: ID '{id}' introuvable, retry avec '{resolved}'");
+                        id = resolved;
+                        (output, exitCode) = await RunWithCodeAsync("winget",
+                            $"upgrade --id \"{id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
+                            progress, ct);
+                    }
+                }
 
                 // 0x8A15002B = AGREEMENT_NOT_ACCEPTED : retry avec --force pour forcer l'acceptation
                 if (exitCode == -1978335189)
                 {
                     Logger.Warn($"[Winget] {item.Title}: accord requis, retry --force");
                     (output, exitCode) = await RunWithCodeAsync("winget",
-                        $"upgrade --id \"{item.Id}\" --force --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
+                        $"upgrade --id \"{id}\" --force --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
                         progress, ct);
                 }
 
@@ -96,7 +116,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                 {
                     Logger.Warn($"[Winget] {item.Title}: ShellExec échoué, retry sans --silent");
                     (output, exitCode) = await RunWithCodeAsync("winget",
-                        $"upgrade --id \"{item.Id}\" --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
+                        $"upgrade --id \"{id}\" --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
                         progress, ct);
                 }
 
@@ -104,12 +124,20 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                 {
                     installed++;
                 }
-                else if (exitCode is -1978335213 or -1978335212)
+                else if (exitCode == -1978335213)
                 {
-                    // MS Store bloqué par politique → manuel requis
+                    // 0x8A150013 = bloqué par politique → manuel requis
                     manual++;
                     manualErrors.Add($"{item.Title} (MS Store bloqué)");
                     Logger.Warn($"[Winget] {item.Title}: bloqué par politique MS Store — installation manuelle requise");
+                }
+                else if (exitCode == -1978335212)
+                {
+                    // 0x8A150014 = NO_APPLICATIONS_FOUND persistant : paquet introuvable
+                    failed++;
+                    errors.Add(item.Title);
+                    errorCodes[item.Title] = "0x8A150014";
+                    Logger.Warn($"[Winget] {item.Title}: paquet introuvable (ID '{id}')");
                 }
                 else if (IsManualRequired(exitCode, output))
                 {
@@ -155,8 +183,8 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
 
         try
         {
-            var output = await RunAsync("winget",
-                "list --source winget --accept-source-agreements --disable-interactivity", ct: ct);
+            var output = await RunWideAsync(
+                "list --source winget --accept-source-agreements --disable-interactivity", ct);
             items = ParseListTable(output, "Winget");
             Logger.Info($"[Winget] {items.Count} paquets installés");
         }
@@ -183,8 +211,9 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
             progress?.Report($"Désinstallation: {item.Title}...");
             try
             {
+                string id = item.Id.Contains('…') ? await ResolveFullIdAsync(item.Id, ct) : item.Id;
                 var (output, exitCode) = await RunWithCodeAsync("winget",
-                    $"uninstall --id \"{item.Id}\" --silent --accept-source-agreements --disable-interactivity",
+                    $"uninstall --id \"{id}\" --silent --accept-source-agreements --disable-interactivity",
                     progress, ct);
 
                 if (exitCode is 0 or 3010)
@@ -196,7 +225,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                 {
                     // Retry sans --silent si l'installeur ne supporte pas le mode silencieux
                     var (output2, exitCode2) = await RunWithCodeAsync("winget",
-                        $"uninstall --id \"{item.Id}\" --accept-source-agreements",
+                        $"uninstall --id \"{id}\" --accept-source-agreements",
                         progress, ct);
                     if (exitCode2 is 0 or 3010) { uninstalled++; Logger.Info($"[Winget] Désinstallé (retry): {item.Title}"); }
                     else { failed++; errors.Add(item.Title); Logger.Warn($"[Winget] Échec désinstall {item.Title}: exit {exitCode2:X8}"); }
@@ -207,6 +236,51 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
         }
 
         return new UninstallResult(failed == 0, $"{uninstalled} désinstallé(s), {failed} erreur(s)", uninstalled, failed, errors);
+    }
+
+    // --- Helpers ---
+
+    /// <summary>
+    /// Exécute winget dans une console cachée élargie (512 colonnes) : sans cela, winget
+    /// tronque les colonnes de ses tables à 120 caractères avec '…' quand la sortie est
+    /// redirigée, ce qui casse les IDs longs. Les guillemets de wingetArgs sont échappés.
+    /// </summary>
+    private static Task<string> RunWideAsync(string wingetArgs, CancellationToken ct = default)
+        => RunAsync("powershell.exe",
+            "-NoProfile -NonInteractive -Command \"[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; " +
+            "try { [Console]::SetBufferSize(512, 300) } catch {}; " +
+            "winget " + wingetArgs.Replace("\"", "\\\"") + "\"",
+            ct: ct);
+
+    /// <summary>
+    /// Résout un ID tronqué par la table winget ('…') en interrogeant `winget list --id prefix`
+    /// (correspondance par sous-chaîne côté winget). Retourne l'ID d'origine si rien de mieux.
+    /// </summary>
+    private async Task<string> ResolveFullIdAsync(string truncatedId, CancellationToken ct)
+    {
+        var prefix = truncatedId.TrimEnd('…', '.', ' ').Trim();
+        if (prefix.Length < 3) return truncatedId;
+        try
+        {
+            var output = await RunWideAsync(
+                $"list --id \"{prefix}\" --accept-source-agreements --disable-interactivity", ct);
+            foreach (var line in output.Split('\n'))
+            {
+                foreach (var token in line.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (token.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                        && !token.Contains('…')
+                        && token.Length > prefix.Length)
+                    {
+                        Logger.Info($"[Winget] ID résolu: '{truncatedId}' → '{token}'");
+                        return token;
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) { Logger.Warn($"[Winget] ResolveFullId '{truncatedId}': {ex.Message}"); }
+        return truncatedId;
     }
 
     // --- Parsers ---
