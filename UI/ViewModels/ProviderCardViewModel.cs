@@ -220,6 +220,7 @@ public partial class ProviderCardViewModel : ObservableObject
     {
         HiddenUpdatesStore.Hide(item.Id);
         Updates.Remove(item);
+        StatusText = Updates.Count > 0 ? $"{Updates.Count} mise(s) à jour" : "À jour";
         Logger.Info($"[{Name}] Masqué: {item.Title} ({item.Id})");
     }
 
