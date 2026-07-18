@@ -2,6 +2,15 @@
 
 ---
 
+## v1.8.0 — 2026-07-19
+
+### Corrections
+- **Gel de « Tout installer »** : Windows Update installait toute la collection en un seul appel COM bloquant (sans progression/annulation/délai). Refonte : une mise à jour à la fois avec progression « [i/N] titre », délai 60 min par élément (`PUREUPDATE_WU_TIMEOUT_MIN`), codes d'erreur par mise à jour, la file continue en cas de blocage.
+- **Edge 0x8A15008E** (technologie d'installation différente) : classé « manuelle requise » avec message explicite au lieu d'un échec brut.
+- **Statut de fin honnête** : affiche le nombre de mises à jour restantes si tout n'a pas été installé.
+
+---
+
 ## v1.7.0 — 2026-07-18
 
 ### Corrections

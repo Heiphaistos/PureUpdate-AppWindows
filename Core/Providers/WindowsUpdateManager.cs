@@ -57,62 +57,131 @@ public sealed class WindowsUpdateManager : IUpdateProvider, IUninstallProvider
         }, ct);
     }
 
+    /// <summary>
+    /// Délai maximal par mise à jour Windows (téléchargement + installation).
+    /// Surchargeable via PUREUPDATE_WU_TIMEOUT_MIN.
+    /// </summary>
+    private static readonly TimeSpan WuItemTimeout =
+        int.TryParse(Environment.GetEnvironmentVariable("PUREUPDATE_WU_TIMEOUT_MIN"), out int m) && m > 0
+            ? TimeSpan.FromMinutes(m)
+            : TimeSpan.FromMinutes(60);
+
     public async Task<UpdateResult> InstallAsync(
         List<UpdateItem>   items,
         IProgress<string>? progress = null,
         CancellationToken  ct       = default)
     {
-        return await Task.Run(() =>
+        // Une mise à jour à la fois (téléchargement PUIS installation par item) :
+        // l'ancien Download() global de toute la collection était un appel COM bloquant
+        // de plusieurs Go sans progression ni timeout — perçu comme un gel complet.
+        int installed = 0, failed = 0;
+        var errors     = new List<string>();
+        var errorCodes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        var wanted = await Task.Run(() =>
         {
-            int installed = 0, failed = 0;
-            var errors = new List<string>();
-            try
+            var list = new List<(string id, string title)>();
+            var sessionType = Type.GetTypeFromProgID("Microsoft.Update.Session")!;
+            dynamic session  = Activator.CreateInstance(sessionType)!;
+            dynamic searcher = session.CreateUpdateSearcher();
+            searcher.Online  = true;
+            dynamic sr       = searcher.Search("IsInstalled=0 and IsHidden=0");
+            for (int i = 0; i < sr.Updates.Count; i++)
             {
-                var sessionType = Type.GetTypeFromProgID("Microsoft.Update.Session")!;
-                dynamic session = Activator.CreateInstance(sessionType)!;
-                var collType    = Type.GetTypeFromProgID("Microsoft.Update.UpdateColl")!;
-                dynamic coll    = Activator.CreateInstance(collType)!;
+                dynamic u = sr.Updates.Item(i);
+                string id = (string)u.Identity.UpdateID;
+                if (items.Any(x => x.Id == id))
+                    list.Add((id, (string)u.Title));
+            }
+            return list;
+        }, ct);
 
-                dynamic searcher = session.CreateUpdateSearcher();
-                searcher.Online  = true;
-                dynamic sr       = searcher.Search("IsInstalled=0 and IsHidden=0");
+        if (wanted.Count == 0) return new UpdateResult(true, "Rien à installer");
 
-                for (int i = 0; i < sr.Updates.Count; i++)
-                {
-                    dynamic u = sr.Updates.Item(i);
-                    if (items.Any(x => x.Id == (string)u.Identity.UpdateID))
-                    {
-                        if (!(bool)u.EulaAccepted) u.AcceptEula();
-                        coll.Add(u);
-                    }
-                }
-                if (coll.Count == 0) return new UpdateResult(true, "Rien à installer");
+        int idx = 0, total = wanted.Count;
+        foreach (var (updateId, title) in wanted)
+        {
+            idx++;
+            ct.ThrowIfCancellationRequested();
+            progress?.Report($"[{idx}/{total}] {title}...");
 
-                progress?.Report("[1/3] Téléchargement des mises à jour...");
+            var itemTask = Task.Run(() => InstallSingleUpdate(updateId), ct);
+            var winner   = await Task.WhenAny(itemTask, Task.Delay(WuItemTimeout, ct));
+            if (winner != itemTask)
+            {
+                // Le service WU poursuit en arrière-plan ; on abandonne l'attente pour
+                // ne pas geler la file. Pas de kill possible sur un appel COM in-process.
+                failed++;
+                errors.Add(title);
+                errorCodes[title] = "TIMEOUT";
+                Logger.Warn($"[WindowsUpdate] {title}: délai dépassé ({WuItemTimeout}), attente abandonnée, passage à la suivante");
+                continue;
+            }
+
+            var (ok, detail) = await itemTask;
+            if (ok) { installed++; Logger.Info($"[WindowsUpdate] Installée: {title}"); }
+            else
+            {
+                failed++;
+                errors.Add(title);
+                if (!string.IsNullOrEmpty(detail)) errorCodes[title] = detail;
+                Logger.Warn($"[WindowsUpdate] Échec {title}: {detail}");
+            }
+        }
+
+        return new UpdateResult(
+            failed == 0,
+            $"{installed} installées, {failed} erreurs",
+            installed, failed, errors,
+            ErrorCodes: errorCodes.Count > 0 ? errorCodes : null);
+    }
+
+    /// <summary>Télécharge puis installe UNE mise à jour (session COM dédiée, thread MTA).</summary>
+    private static (bool ok, string detail) InstallSingleUpdate(string updateId)
+    {
+        try
+        {
+            var sessionType = Type.GetTypeFromProgID("Microsoft.Update.Session")!;
+            dynamic session  = Activator.CreateInstance(sessionType)!;
+            dynamic searcher = session.CreateUpdateSearcher();
+            searcher.Online  = false; // déjà cherché en ligne juste avant
+            dynamic sr = searcher.Search($"UpdateID='{updateId}'");
+            if ((int)sr.Updates.Count == 0)
+            {
+                searcher.Online = true;
+                sr = searcher.Search($"UpdateID='{updateId}'");
+            }
+            if ((int)sr.Updates.Count == 0) return (false, "INTROUVABLE");
+
+            dynamic u = sr.Updates.Item(0);
+            if (!(bool)u.EulaAccepted) u.AcceptEula();
+
+            var collType = Type.GetTypeFromProgID("Microsoft.Update.UpdateColl")!;
+            dynamic coll = Activator.CreateInstance(collType)!;
+            coll.Add(u);
+
+            if (!(bool)u.IsDownloaded)
+            {
                 dynamic dl = session.CreateUpdateDownloader();
                 dl.Updates = coll;
-                dl.Download();
-
-                progress?.Report("[2/3] Installation en cours...");
-                dynamic inst = session.CreateUpdateInstaller();
-                inst.Updates = coll;
-                dynamic ir   = inst.Install();
-
-                progress?.Report("[3/3] Vérification des résultats...");
-
-                for (int i = 0; i < coll.Count; i++)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    dynamic r = ir.GetUpdateResult(i);
-                    if ((int)r.ResultCode == 2) installed++;
-                    else { failed++; errors.Add($"{(string)coll.Item(i).Title}"); }
-                }
+                dynamic dr = dl.Download();
+                if ((int)dr.ResultCode != 2)
+                    return (false, $"DL 0x{(uint)(int)dr.HResult:X8}");
             }
-            catch (OperationCanceledException) { throw; }
-            catch (Exception ex) { Logger.Error($"[WindowsUpdate] Install: {ex.Message}"); return new UpdateResult(false, ex.Message); }
 
-            return new UpdateResult(failed == 0, $"{installed} installées, {failed} erreurs", installed, failed, errors);
-        }, ct);
+            dynamic inst = session.CreateUpdateInstaller();
+            inst.Updates = coll;
+            dynamic ir   = inst.Install();
+            dynamic r    = ir.GetUpdateResult(0);
+            int code     = (int)r.ResultCode;
+            return code == 2
+                ? (true, "")
+                : (false, $"RC{code} 0x{(uint)(int)r.HResult:X8}");
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
     }
 
     // --- IUninstallProvider ---

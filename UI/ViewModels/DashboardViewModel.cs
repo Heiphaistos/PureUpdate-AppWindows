@@ -103,7 +103,9 @@ public partial class DashboardViewModel : ObservableObject
             IsRebootRequired = RebootRequiredService.IsRebootRequired();
             int remaining = Providers.Sum(p => p.UpdateCount - p.ManualCount);
             HealthScore.Update(remaining, IsRebootRequired);
-            GlobalStatus = "Toutes les mises à jour ont été installées";
+            GlobalStatus = remaining > 0
+                ? $"Installation terminée — {remaining} mise(s) à jour restante(s) (voir cartes/Erreurs)"
+                : "Toutes les mises à jour ont été installées";
 
             if (IsRebootRequired) NotificationService.NotifyRebootRequired();
         }

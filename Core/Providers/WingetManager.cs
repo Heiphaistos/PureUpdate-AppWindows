@@ -149,6 +149,14 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                     errorCodes[item.Title] = "0x8A150014";
                     Logger.Warn($"[Winget] {item.Title}: paquet introuvable (ID '{id}')");
                 }
+                else if (exitCode == -1978335090)
+                {
+                    // 0x8A15008E = INSTALL_TECHNOLOGY_MISMATCH : winget refuse par design
+                    // (ex. Edge installé hors winget) → réinstallation manuelle requise
+                    manual++;
+                    manualErrors.Add($"{item.Title} (technologie d'installation différente — réinstaller manuellement)");
+                    Logger.Warn($"[Winget] {item.Title}: technologie d'installation différente — winget ne peut pas le mettre à jour");
+                }
                 else if (exitCode == TimeoutExitCode)
                 {
                     failed++;
