@@ -2,6 +2,17 @@
 
 ---
 
+## v1.6.0 — 2026-07-18
+
+### Correction majeure — installations Winget
+- **Les installations Winget échouaient en masse sur les machines avec beaucoup de paquets** : winget tronque les colonnes de ses tables à 120 caractères (avec « … ») quand sa sortie est redirigée, donc les IDs longs parsés étaient invalides et chaque `upgrade --id` échouait avec NO_APPLICATIONS_FOUND (0x8A150014) — masqué de surcroît en « MS Store bloqué ». Correctifs :
+  - scan et liste exécutés dans une console cachée élargie à 512 colonnes (plus aucune troncature à la source) ;
+  - tout ID contenant « … » est résolu via `winget list` avant upgrade/désinstallation, avec retry automatique sur 0x8A150014 ;
+  - 0x8A150014 est désormais remonté comme un vrai échec avec le nom du paquet (page Erreurs).
+- Validé en VM : 7-Zip 24.09→26.02 et Notepad++ 8.9→8.9.7 réellement mis à jour via la carte Winget, listes re-scannées propres.
+
+---
+
 ## v1.5.0 — 2026-07-18
 
 ### Corrections

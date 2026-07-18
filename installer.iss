@@ -1,5 +1,5 @@
 #define AppName      "PureUpdate"
-#define AppVersion   "1.5.0"
+#define AppVersion   "1.6.0"
 #define AppPublisher "Heiphaistos"
 #define AppURL       "https://github.com/heiphaistos44-crypto/PureUpdate-"
 #define AppExeName   "PureUpdate.exe"
