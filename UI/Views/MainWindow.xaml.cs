@@ -12,6 +12,9 @@ public partial class MainWindow : Window
     private ErrorsPage?    _errors;
     private DriversPage?   _drivers;
 
+    public UI.ViewModels.DashboardViewModel? DashboardVm =>
+        _dashboard?.DataContext as UI.ViewModels.DashboardViewModel;
+
     public MainWindow()
     {
         InitializeComponent();

@@ -2,6 +2,22 @@
 
 ---
 
+## v1.5.0 — 2026-07-18
+
+### Corrections
+- **Encodage des sorties PowerShell** : les noms de périphériques accentués s'affichaient corrompus sur la page Pilotes (« Clich� instantan� ») — la sortie OEM de PowerShell était lue en UTF-8. Corrigé pour la page Pilotes, l'historique Get-HotFix et les commandes Scoop.
+- **Versions affichées** : « À propos » affichait 1.3.0 et le pied de page des exports HTML 1.2.0 (valeurs codées en dur) — toutes les versions affichées proviennent désormais de l'assembly.
+- **Statut de carte après masquage** : masquer la dernière mise à jour d'un provider laissait l'ancien compteur affiché dans le statut de la carte.
+- **Page Pilotes** : les périphériques fantômes (déconnectés, Status=Unknown) et les classes virtuelles sont maintenant exclus du scan ; seuls Error/Degraded sont signalés comme problèmes.
+
+### Installeur
+- Nouveau **setup Inno Setup** (`PureUpdate_vX.Y.Z_win-x64_Setup.exe`) : installation dans Program Files, icônes menu Démarrer + bureau (optionnel), désinstallation propre incluant les données locales.
+
+### Validation
+- Campagne de tests complète en VM Windows 11 : scan/installation réels Windows Update et Winget, désinstallation réelle d'un paquet Chocolatey, exports HTML/CSV, masquage de mises à jour, filtre de recherche, pages Pilotes/Erreurs/Historique/Désinstaller, thèmes et paramètres.
+
+---
+
 ## v1.4.0 — 2026-05-30
 
 ### Thèmes & Personnalisation

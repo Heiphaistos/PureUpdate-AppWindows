@@ -59,6 +59,17 @@ public partial class App : Application
             {
                 mainWin.Hide();
                 Logger.Info("[App] Mode --scan headless activé");
+                Dispatcher.InvokeAsync(async () =>
+                {
+                    try
+                    {
+                        if (mainWin.DashboardVm?.ScanAllCommand is { } cmd)
+                            await cmd.ExecuteAsync(null);
+                        Logger.Info("[App] Scan headless terminé");
+                    }
+                    catch (Exception ex) { Logger.Error($"[App] Scan headless: {ex.Message}"); }
+                    finally { ForceExit = true; Shutdown(); }
+                });
             }
         }
         catch (Exception ex)
@@ -183,11 +194,30 @@ public partial class App : Application
             rtb.Render(dv);
             rtb.Freeze();
 
-            _trayIcon.IconSource  = rtb;
+            // Hardcodet IconSource ne supporte pas un RenderTargetBitmap (résolution URI) :
+            // passer par une vraie System.Drawing.Icon
+            var enc = new PngBitmapEncoder();
+            enc.Frames.Add(BitmapFrame.Create(rtb));
+            using var ms = new MemoryStream();
+            enc.Save(ms);
+            ms.Position = 0;
+            using var bmp = new System.Drawing.Bitmap(ms);
+            IntPtr hIcon = bmp.GetHicon();
+            var newIcon  = System.Drawing.Icon.FromHandle(hIcon);
+
+            _trayIcon.Icon        = newIcon;
             _trayIcon.ToolTipText = $"PureUpdate — {count} mise(s) à jour en attente";
+
+            if (_lastBadgeIconHandle != IntPtr.Zero) DestroyIcon(_lastBadgeIconHandle);
+            _lastBadgeIconHandle = hIcon;
         }
         catch (Exception ex) { Logger.Warn($"[Tray] Badge: {ex.Message}"); }
     }
+
+    private IntPtr _lastBadgeIconHandle = IntPtr.Zero;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+    private static extern bool DestroyIcon(IntPtr hIcon);
 
     protected override void OnExit(ExitEventArgs e)
     {
