@@ -84,9 +84,12 @@ public partial class DriversViewModel : ObservableObject
         var results = new List<DriverItem>();
         try
         {
-            // Get-PnpDevice returns FriendlyName, Status, Class, Manufacturer, InstanceId
+            // Only present devices (Status != Unknown), exclude virtual/software classes
             const string script =
-                "Get-PnpDevice | Select-Object FriendlyName,Status,Class,Manufacturer,InstanceId,DeviceID | " +
+                "$excl = @('SoftwareDevice','WPD','VolumeSnapshot','PrintQueue','Printer');" +
+                "Get-PnpDevice | " +
+                "Where-Object { $_.Status -ne 'Unknown' -and $_.Class -notin $excl } | " +
+                "Select-Object FriendlyName,Status,Class,Manufacturer,InstanceId | " +
                 "ConvertTo-Csv -NoTypeInformation";
 
             var psi = new ProcessStartInfo("powershell.exe",
@@ -120,8 +123,9 @@ public partial class DriversViewModel : ObservableObject
 
                 if (string.IsNullOrWhiteSpace(name)) continue;
 
-                bool problem = !status.Equals("OK", StringComparison.OrdinalIgnoreCase)
-                            && !string.IsNullOrWhiteSpace(status);
+                // Only real driver errors — Error/Degraded, not "Unknown" (ghost/disconnected)
+                bool problem = status.Equals("Error",    StringComparison.OrdinalIgnoreCase)
+                            || status.Equals("Degraded", StringComparison.OrdinalIgnoreCase);
 
                 results.Add(new DriverItem(
                     name, "—", "—", mfr, cls,
