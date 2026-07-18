@@ -70,6 +70,8 @@ public static class ExportService
         int failed  = total - success;
         string generated = DateTime.Now.ToString("dddd d MMMM yyyy à HH:mm");
         int    year      = DateTime.Now.Year;
+        var    v         = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        string version   = v is null ? "?" : $"{v.Major}.{v.Minor}.{v.Build}";
 
         // Use $$ raw string so CSS single-braces are literal; interpolations use {{expr}}
         return $$"""
@@ -131,7 +133,7 @@ public static class ExportService
       {{rows}}
     </tbody>
   </table>
-  <footer>PureUpdate v1.2.0 · Rapport automatique · {{year}}</footer>
+  <footer>PureUpdate v{{version}} · Rapport automatique · {{year}}</footer>
 </body>
 </html>
 """;

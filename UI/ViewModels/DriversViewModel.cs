@@ -86,6 +86,7 @@ public partial class DriversViewModel : ObservableObject
         {
             // Only present devices (Status != Unknown), exclude virtual/software classes
             const string script =
+                "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8;" +
                 "$excl = @('SoftwareDevice','WPD','VolumeSnapshot','PrintQueue','Printer');" +
                 "Get-PnpDevice | " +
                 "Where-Object { $_.Status -ne 'Unknown' -and $_.Class -notin $excl } | " +

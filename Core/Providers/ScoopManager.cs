@@ -161,7 +161,7 @@ public sealed class ScoopManager : CliProviderBase, IUpdateProvider, ISelfManage
     private static Task<string> RunPs(string cmd,
         IProgress<string>? progress = null, CancellationToken ct = default)
         => RunAsync("powershell.exe",
-            $"-NoProfile -NonInteractive -Command \"{cmd}\"",
+            $"-NoProfile -NonInteractive -Command \"[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; {cmd}\"",
             progress, ct);
 
     private static List<UpdateItem> ParseScoopStatus(string output)

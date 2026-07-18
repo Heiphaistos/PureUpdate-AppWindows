@@ -183,7 +183,7 @@
                             </LinearGradientBrush>
                         </Rectangle.Fill>
                     </Rectangle>
-                    <TextBlock Text="v1.5.0  ·  Windows 10/11"
+                    <TextBlock x:Name="VersionFooter"
                                FontSize="10" Opacity="0.18"
                                HorizontalAlignment="Center" Foreground="White"/>
                 </StackPanel>

@@ -122,7 +122,7 @@ public sealed class WindowsUpdateManager : IUpdateProvider, IUninstallProvider
             {
                 Logger.Info("[WindowsUpdate] Scan des mises à jour installées...");
                 var psi = new System.Diagnostics.ProcessStartInfo("powershell.exe",
-                    "-NoProfile -NonInteractive -Command \"Get-HotFix | Select-Object HotFixID,Description,InstalledOn | ConvertTo-Csv -NoTypeInformation\"")
+                    "-NoProfile -NonInteractive -Command \"[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; Get-HotFix | Select-Object HotFixID,Description,InstalledOn | ConvertTo-Csv -NoTypeInformation\"")
                 {
                     RedirectStandardOutput = true,
                     RedirectStandardError  = true,

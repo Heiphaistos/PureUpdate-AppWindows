@@ -16,6 +16,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+        var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        VersionFooter.Text = $"v{v?.Major}.{v?.Minor}.{v?.Build}  ·  Windows 10/11";
         _dashboard = new DashboardPage();
         MainFrame.Navigate(_dashboard);
         Closed += (_, _) =>

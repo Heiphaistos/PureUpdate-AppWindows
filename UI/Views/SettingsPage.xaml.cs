@@ -11,6 +11,8 @@ public partial class SettingsPage : Page
     {
         InitializeComponent();
         DataContext = new SettingsViewModel();
+        var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        VersionText.Text = v is null ? "?" : $"{v.Major}.{v.Minor}.{v.Build}";
     }
 
     private async void BtnCleanCache_Click(object sender, RoutedEventArgs e)
