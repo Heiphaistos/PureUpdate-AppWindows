@@ -53,3 +53,6 @@ Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\PureUpdate"
+Type: filesandordirs; Name: "{app}\.logs"
+Type: files; Name: "{app}\hidden_updates.json"
+Type: dirifempty; Name: "{app}"
