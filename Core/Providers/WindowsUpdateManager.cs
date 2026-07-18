@@ -33,7 +33,8 @@ public sealed class WindowsUpdateManager : IUpdateProvider, IUninstallProvider
                 searcher.Online  = true;
 
                 Logger.Info("[WindowsUpdate] Scan en cours...");
-                dynamic result = searcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0");
+                // Sans filtre Type : inclut logicielles ET pilotes, y compris les facultatives
+                dynamic result = searcher.Search("IsInstalled=0 and IsHidden=0");
 
                 for (int i = 0; i < result.Updates.Count; i++)
                 {
@@ -74,13 +75,16 @@ public sealed class WindowsUpdateManager : IUpdateProvider, IUninstallProvider
 
                 dynamic searcher = session.CreateUpdateSearcher();
                 searcher.Online  = true;
-                dynamic sr       = searcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0");
+                dynamic sr       = searcher.Search("IsInstalled=0 and IsHidden=0");
 
                 for (int i = 0; i < sr.Updates.Count; i++)
                 {
                     dynamic u = sr.Updates.Item(i);
                     if (items.Any(x => x.Id == (string)u.Identity.UpdateID))
+                    {
+                        if (!(bool)u.EulaAccepted) u.AcceptEula();
                         coll.Add(u);
+                    }
                 }
                 if (coll.Count == 0) return new UpdateResult(true, "Rien à installer");
 

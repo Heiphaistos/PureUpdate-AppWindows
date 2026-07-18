@@ -2,6 +2,14 @@
 
 ---
 
+## v1.7.0 — 2026-07-18
+
+### Corrections
+- **File d'installation Winget plus jamais bloquée** : délai maximal de 20 min par paquet (processus tué au-delà, échec « TIMEOUT » page Erreurs, la file continue). Réglable via `PUREUPDATE_WINGET_TIMEOUT_SEC`.
+- **Windows Update** : le scan inclut désormais les pilotes et les mises à jour facultatives (critère sans filtre `Type='Software'`) + acceptation automatique des CLUF avant installation.
+
+---
+
 ## v1.6.0 — 2026-07-18
 
 ### Correction majeure — installations Winget

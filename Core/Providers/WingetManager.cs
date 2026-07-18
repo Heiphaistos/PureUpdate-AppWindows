@@ -12,6 +12,16 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
     private bool? _available;
     public bool IsAvailable => _available ??= IsCommandAvailable("winget");
 
+    /// <summary>
+    /// Délai maximal par commande winget d'installation/désinstallation : certains installeurs
+    /// pendent indéfiniment malgré --silent/--disable-interactivity et gelaient toute la file.
+    /// Surchargeable via PUREUPDATE_WINGET_TIMEOUT_SEC.
+    /// </summary>
+    private static readonly TimeSpan ItemTimeout =
+        int.TryParse(Environment.GetEnvironmentVariable("PUREUPDATE_WINGET_TIMEOUT_SEC"), out int s) && s > 0
+            ? TimeSpan.FromSeconds(s)
+            : TimeSpan.FromMinutes(20);
+
     public bool CheckAvailability()
     {
         _available = IsCommandAvailable("winget");
@@ -86,7 +96,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
 
                 var (output, exitCode) = await RunWithCodeAsync("winget",
                     $"upgrade --id \"{id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
-                    progress, ct);
+                    progress, ct, ItemTimeout);
 
                 // 0x8A150014 = NO_APPLICATIONS_FOUND : ID inexact (troncature) → résoudre puis retry
                 if (exitCode == -1978335212)
@@ -98,7 +108,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                         id = resolved;
                         (output, exitCode) = await RunWithCodeAsync("winget",
                             $"upgrade --id \"{id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
-                            progress, ct);
+                            progress, ct, ItemTimeout);
                     }
                 }
 
@@ -108,7 +118,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                     Logger.Warn($"[Winget] {item.Title}: accord requis, retry --force");
                     (output, exitCode) = await RunWithCodeAsync("winget",
                         $"upgrade --id \"{id}\" --force --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
-                        progress, ct);
+                        progress, ct, ItemTimeout);
                 }
 
                 // 0x8A150006 = SHELLEXEC_INSTALL_FAILED : retry sans --silent
@@ -117,7 +127,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                     Logger.Warn($"[Winget] {item.Title}: ShellExec échoué, retry sans --silent");
                     (output, exitCode) = await RunWithCodeAsync("winget",
                         $"upgrade --id \"{id}\" --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
-                        progress, ct);
+                        progress, ct, ItemTimeout);
                 }
 
                 if (exitCode is 0 or 3010)
@@ -138,6 +148,13 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                     errors.Add(item.Title);
                     errorCodes[item.Title] = "0x8A150014";
                     Logger.Warn($"[Winget] {item.Title}: paquet introuvable (ID '{id}')");
+                }
+                else if (exitCode == TimeoutExitCode)
+                {
+                    failed++;
+                    errors.Add(item.Title);
+                    errorCodes[item.Title] = "TIMEOUT";
+                    Logger.Warn($"[Winget] {item.Title}: installation bloquée — délai dépassé, processus tué, passage au suivant");
                 }
                 else if (IsManualRequired(exitCode, output))
                 {
@@ -214,7 +231,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                 string id = item.Id.Contains('…') ? await ResolveFullIdAsync(item.Id, ct) : item.Id;
                 var (output, exitCode) = await RunWithCodeAsync("winget",
                     $"uninstall --id \"{id}\" --silent --accept-source-agreements --disable-interactivity",
-                    progress, ct);
+                    progress, ct, ItemTimeout);
 
                 if (exitCode is 0 or 3010)
                 {
@@ -226,7 +243,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                     // Retry sans --silent si l'installeur ne supporte pas le mode silencieux
                     var (output2, exitCode2) = await RunWithCodeAsync("winget",
                         $"uninstall --id \"{id}\" --accept-source-agreements",
-                        progress, ct);
+                        progress, ct, ItemTimeout);
                     if (exitCode2 is 0 or 3010) { uninstalled++; Logger.Info($"[Winget] Désinstallé (retry): {item.Title}"); }
                     else { failed++; errors.Add(item.Title); Logger.Warn($"[Winget] Échec désinstall {item.Title}: exit {exitCode2:X8}"); }
                 }

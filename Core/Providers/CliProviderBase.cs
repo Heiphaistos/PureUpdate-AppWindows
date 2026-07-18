@@ -19,16 +19,21 @@ public abstract class CliProviderBase
         return output;
     }
 
+    /// <summary>Exit code renvoyé quand la commande dépasse le délai (processus tué).</summary>
+    public const int TimeoutExitCode = -999;
+
     protected static async Task<(string output, int exitCode)> RunWithCodeAsync(
         string exe, string args,
         IProgress<string>? progress = null,
-        CancellationToken ct = default)
-        => await RunCoreAsync(exe, args, progress, ct);
+        CancellationToken ct = default,
+        TimeSpan? timeout = null)
+        => await RunCoreAsync(exe, args, progress, ct, timeout);
 
     private static async Task<(string output, int exitCode)> RunCoreAsync(
         string exe, string args,
         IProgress<string>? progress,
-        CancellationToken ct)
+        CancellationToken ct,
+        TimeSpan? timeout = null)
     {
         var psi = new ProcessStartInfo(exe, args)
         {
@@ -66,15 +71,19 @@ public abstract class CliProviderBase
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        if (timeout is { } t) timeoutCts.CancelAfter(t);
         try
         {
             // ConfigureAwait(false) évite le deadlock quand appelé via GetAwaiter().GetResult() depuis le dispatcher
-            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            await process.WaitForExitAsync(timeoutCts.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
             try { process.Kill(entireProcessTree: true); } catch { }
-            throw;
+            if (ct.IsCancellationRequested) throw;
+            Logger.Warn($"[{exe}] Délai dépassé ({timeout}), processus tué — args: {args}");
+            return (sb.ToString(), TimeoutExitCode);
         }
         return (sb.ToString(), process.ExitCode);
     }
