@@ -2,6 +2,15 @@
 
 ---
 
+## v1.8.1 — 2026-10-02
+
+### Corrections
+- **Pilotes** : l'état vide « Aucun pilote à afficher » restait dessiné par-dessus la liste après « Analyser ». Il n'apparaît plus que si la liste est vide et qu'aucune analyse n'est en cours.
+- **Pilotes** : la ligne d'état (« N pilote(s)… ») débordait sur le bord de la barre de recherche ; elle est maintenant dans la barre.
+- **Historique** : les icônes des onglets Windows Update et Scoop s'affichaient en carré vide (emoji non pris en charge par WPF) ; remplacées.
+
+---
+
 ## v1.8.0 — 2026-07-19
 
 ### Corrections

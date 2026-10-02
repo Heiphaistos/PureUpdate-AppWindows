@@ -148,7 +148,7 @@
                     Padding="0">
 
             <!-- ═══ Windows Update History ═══ -->
-            <TabItem Header="🪟 Windows Update">
+            <TabItem Header="🔄 Windows Update">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -316,7 +316,7 @@
             </TabItem>
 
             <!-- ═══ Scoop packages ═══ -->
-            <TabItem Header="🪣 Scoop">
+            <TabItem Header="🥄 Scoop">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

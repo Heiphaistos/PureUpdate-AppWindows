@@ -65,6 +65,10 @@
                 </LinearGradientBrush>
             </Border.BorderBrush>
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -133,14 +137,13 @@
                         </TextBlock>
                     </StackPanel>
                 </Border>
+
+                <!-- Status line, inside the toolbar so it never overlaps its border -->
+                <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding StatusText}"
+                           FontSize="11" Foreground="#2E4A60" Margin="2,8,0,0"
+                           TextTrimming="CharacterEllipsis"/>
             </Grid>
         </Border>
-
-        <!-- Status bar -->
-        <TextBlock Grid.Row="1" Text="{Binding StatusText}"
-                   FontSize="11" Foreground="#2E4A60"
-                   VerticalAlignment="Bottom" Margin="0,0,0,18"
-                   HorizontalAlignment="Left"/>
 
         <!-- Drivers list -->
         <Border Grid.Row="2" CornerRadius="12" BorderThickness="1">
@@ -287,15 +290,19 @@
                 </ScrollViewer>
 
                 <!-- Empty state -->
-                <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                            Visibility="{Binding IsLoading, Converter={StaticResource InvBoolToVis}}">
+                <!-- No local Visibility here: a local value beats style triggers -->
+                <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
                             <Setter Property="Visibility" Value="Collapsed"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding FilteredDrivers.Count}" Value="0">
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding FilteredDrivers.Count}" Value="0"/>
+                                        <Condition Binding="{Binding IsLoading}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
                                     <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </StackPanel.Style>
