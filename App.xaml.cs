@@ -13,6 +13,7 @@ namespace PureUpdate;
 public partial class App : Application
 {
     public static bool ForceExit { get; set; }
+    public static UpdateService? Updates { get; private set; }
 
     private TaskbarIcon? _trayIcon;
     private int _lastUpdateCount;
@@ -54,6 +55,13 @@ public partial class App : Application
                 mainWin.WindowState = WindowState.Minimized;
 
             mainWin.Show();
+
+            if (!headlessScan)
+            {
+                Updates = new UpdateService(() =>
+                    mainWin.DashboardVm is { } d && (d.IsInstallingAll || d.Providers.Any(p => p.IsInstalling)));
+                Updates.Start();
+            }
 
             if (headlessScan)
             {
@@ -225,6 +233,7 @@ public partial class App : Application
         NotificationService.TotalUpdatesChanged -= count => UpdateTrayBadge(count);
         NotificationService.RebootRequired      -= OnRebootRequired;
         NotificationService.RestorePointCreated -= OnRestorePointCreated;
+        Updates?.Dispose();
         _trayIcon?.Dispose();
         Logger.Shutdown();
         base.OnExit(e);

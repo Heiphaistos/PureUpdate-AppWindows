@@ -9,15 +9,20 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>PureUpdate</AssemblyName>
     <RootNamespace>PureUpdate</RootNamespace>
-    <Version>1.8.1</Version>
-    <AssemblyVersion>1.8.1.0</AssemblyVersion>
-    <FileVersion>1.8.1.0</FileVersion>
+    <Version>1.9.0</Version>
+    <AssemblyVersion>1.9.0.0</AssemblyVersion>
+    <FileVersion>1.9.0.0</FileVersion>
     <Platforms>x64</Platforms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <Optimize>true</Optimize>
     <ApplicationIcon>Resources\PureUpdate.ico</ApplicationIcon>
     <NoWarn>NU1701</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="tests\**" />
+    <None Remove="tests\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="WPF-UI"                            Version="3.0.5" />

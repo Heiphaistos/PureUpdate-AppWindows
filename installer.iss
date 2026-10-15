@@ -1,5 +1,5 @@
 #define AppName      "PureUpdate"
-#define AppVersion   "1.8.1"
+#define AppVersion   "1.9.0"
 #define AppPublisher "Heiphaistos"
 #define AppURL       "https://github.com/heiphaistos44-crypto/PureUpdate-"
 #define AppExeName   "PureUpdate.exe"
@@ -50,6 +50,8 @@ Name: "{autodesktop}\{#AppName}";      Filename: "{app}\{#AppExeName}"; Comment:
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent runascurrentuser
+; Mise a jour automatique (installation silencieuse) : relance l'application.
+Filename: "{app}\{#AppExeName}"; Flags: nowait runascurrentuser; Check: WizardSilent
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\PureUpdate"

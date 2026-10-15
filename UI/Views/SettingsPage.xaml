@@ -67,6 +67,31 @@
                 </StackPanel>
             </ui:Card>
 
+            <!-- Mises à jour de l'application -->
+            <ui:Card Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="Mises à jour de PureUpdate"
+                               FontSize="15" FontWeight="SemiBold"
+                               Foreground="#E0EEFF" Margin="0,0,0,12"/>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Vérifier les mises à jour automatiquement"
+                                       FontSize="13" Foreground="#C0D8F0"/>
+                            <TextBlock Text="Au démarrage puis toutes les 6 heures. La nouvelle version est vérifiée (signature, empreinte) avant toute installation."
+                                       FontSize="11" Foreground="#3A5878" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ui:ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoUpdateCheck}"
+                                         VerticalAlignment="Center" Margin="16,0,0,0"/>
+                    </Grid>
+                    <ui:Button Content="Rechercher une mise à jour" Command="{Binding CheckAppUpdateCommand}"
+                               HorizontalAlignment="Left"/>
+                </StackPanel>
+            </ui:Card>
+
             <!-- Options de comportement -->
             <ui:Card Margin="0,0,0,12">
                 <StackPanel>

@@ -15,6 +15,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool   _closeToTray;
     [ObservableProperty] private bool   _autoRestorePoint;
     [ObservableProperty] private bool   _scanOnStartup;
+    [ObservableProperty] private bool   _autoUpdateCheck;
     [ObservableProperty] private string _scanSchedule        = "Disabled";
     [ObservableProperty] private bool   _taskExists;
     [ObservableProperty] private string _schedulerStatus     = string.Empty;
@@ -52,6 +53,7 @@ public partial class SettingsViewModel : ObservableObject
         CloseToTray      = _settings.CloseToTray;
         AutoRestorePoint = _settings.AutoRestorePoint;
         ScanOnStartup    = _settings.ScanOnStartup;
+        AutoUpdateCheck  = _settings.AutoUpdateCheck;
         ScanSchedule     = _settings.ScanSchedule;
         TaskExists       = SchedulerService.TaskExists();
         SchedulerStatus  = TaskExists ? "Tâche planifiée active" : "Aucune tâche planifiée";
@@ -82,6 +84,15 @@ public partial class SettingsViewModel : ObservableObject
         _settings.ScanOnStartup = value;
         AppSettingsService.Save(_settings);
     }
+
+    partial void OnAutoUpdateCheckChanged(bool value)
+    {
+        _settings.AutoUpdateCheck = value;
+        AppSettingsService.Save(_settings);
+    }
+
+    [RelayCommand]
+    private Task CheckAppUpdateAsync() => App.Updates?.CheckAsync(true) ?? Task.CompletedTask;
 
     partial void OnScanScheduleChanged(string value)
     {

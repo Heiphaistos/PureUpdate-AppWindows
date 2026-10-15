@@ -7,6 +7,7 @@ public sealed class AppSettings
     public string ScanSchedule      { get; set; } = "Disabled"; // Disabled | Daily | Weekly
     public bool   StartMinimized    { get; set; } = false;
     public bool   ScanOnStartup     { get; set; } = false;
+    public bool   AutoUpdateCheck   { get; set; } = true; // mises à jour de PureUpdate lui-même
 
     // Personnalisation
     public string ThemePreset  { get; set; } = "Deep Space";
