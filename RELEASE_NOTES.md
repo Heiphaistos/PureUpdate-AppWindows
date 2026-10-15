@@ -2,6 +2,16 @@
 
 ---
 
+## v1.9.0 — 2026-10-15
+
+### Nouveautés
+- **Mise à jour automatique de PureUpdate** : vérification silencieuse au démarrage puis toutes les 6 h, bouton « Rechercher une mise à jour » et réglage « Vérifier les mises à jour automatiquement » (actif par défaut) dans Paramètres.
+- **Sécurité** : manifeste `latest.json` signé (ECDSA P-256 + SHA-256, clé publique embarquée), contrôle de la taille et de l'empreinte de l'installateur, téléchargement limité aux releases GitHub du dépôt.
+- **Installation silencieuse** puis relance automatique pour la copie installée ; une copie portable ouvre la page de téléchargement.
+- Jamais d'installation pendant que PureUpdate applique des mises à jour Windows ou de paquets (différée).
+
+---
+
 ## v1.8.1 — 2026-10-02
 
 ### Corrections

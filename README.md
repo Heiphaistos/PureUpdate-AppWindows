@@ -7,7 +7,7 @@
 [▶ Voir la démonstration complète](https://github.com/heiphaistos44-crypto/PureUpdate-/raw/main/assets/demo.mp4)
 
 
-![Version](https://img.shields.io/badge/version-1.4.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.9.0-blue?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D4?logo=windows&style=flat-square)
 ![Framework](https://img.shields.io/badge/.NET-8.0%20Self--Contained-512BD4?logo=dotnet&style=flat-square)
 ![UI](https://img.shields.io/badge/UI-WPF--UI%20Fluent-0078D4?style=flat-square)
@@ -226,3 +226,9 @@ MIT
 ---
 
 *PureUpdate — Maintenance Windows centralisée, portable et sans friction*
+
+## Mise à jour automatique
+
+PureUpdate vérifie lui-même les nouvelles versions (au démarrage, puis toutes les 6 h) ; réglage et bouton « Rechercher une mise à jour » dans **Paramètres**. L'installateur est vérifié (signature ECDSA P-256 du manifeste, taille, SHA-256) puis lancé en silence ; l'application redémarre seule.
+
+Publier une version (manuel) : compiler (`dotnet publish`, `iscc installer.iss`), puis `python installer/publier_manifeste.py --notes "Phrase pour l'utilisateur."` et joindre `PureUpdate_vX.Y.Z_win-x64_Setup.exe` et `installer_output/latest.json` à la release `vX.Y.Z`. La clé privée reste hors dépôt (`D:\MDP\pureupdate-updater.key`).
