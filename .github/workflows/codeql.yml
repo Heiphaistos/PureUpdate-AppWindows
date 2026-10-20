@@ -8,6 +8,9 @@ on:
   schedule:
     - cron: "21 3 * * 1"
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     name: Analyze (csharp)
@@ -17,17 +20,17 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: "8.x"
 
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@ce5e7eeac396d720fe2d802714996c8ce561e311 # v3
         with:
           languages: csharp
           build-mode: autobuild
 
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@ce5e7eeac396d720fe2d802714996c8ce561e311 # v3
         with:
           category: "/language:csharp"
