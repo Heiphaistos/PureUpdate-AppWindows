@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using PureUpdate.Core.Models;
+using PureUpdate.Core.Services;
 using PureUpdate.Utils;
 
 namespace PureUpdate.Core.Providers;
@@ -153,7 +154,7 @@ $machine = ($machine -split ';' | Where-Object { $_ -notlike '*chocolatey*' }) -
             try
             {
                 var (output, exitCode) = await RunWithCodeAsync("choco",
-                    $"uninstall {item.Id} -y --no-color",
+                    $"uninstall {SafeArgs.PackageId(item.Id)} -y --no-color",
                     progress, ct);
 
                 bool ok = exitCode == 0 && !output.Contains("Failures", StringComparison.OrdinalIgnoreCase);

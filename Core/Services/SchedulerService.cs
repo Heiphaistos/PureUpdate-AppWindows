@@ -35,6 +35,11 @@ public static class SchedulerService
     private static async Task<bool> CreateTaskAsync(string exePath, string schedule, string startTime)
     {
         if (string.IsNullOrWhiteSpace(exePath)) return false;
+        if (!SafeArgs.IsUnderProgramFiles(exePath))
+        {
+            Logger.Warn("[Scheduler] Tâche SYSTEM refusée : l'exécutable n'est pas sous Program Files");
+            return false;
+        }
 
         Logger.Info($"[Scheduler] Création tâche {schedule} à {startTime}");
 

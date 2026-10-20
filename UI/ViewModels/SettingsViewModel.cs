@@ -164,7 +164,9 @@ public partial class SettingsViewModel : ObservableObject
                     ? await SchedulerService.CreateDailyTaskAsync(exePath)
                     : await SchedulerService.CreateWeeklyTaskAsync(exePath);
                 TaskExists      = ok;
-                SchedulerStatus = ok ? $"Tâche {ScanScheduleDisplay} créée avec succès" : "Échec de la création de tâche";
+                SchedulerStatus = ok ? $"Tâche {ScanScheduleDisplay} créée avec succès"
+                    : SafeArgs.IsUnderProgramFiles(exePath) ? "Échec de la création de tâche"
+                    : "Planification refusée : installez PureUpdate avec l'installateur (dossier Program Files) pour programmer une analyse en tant que SYSTEM";
             }
             else
             {

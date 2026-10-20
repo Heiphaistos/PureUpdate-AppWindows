@@ -19,7 +19,7 @@ public sealed record UpdateInfo(Version Version, string Url, long Size, string S
 /// </summary>
 public sealed class AppUpdater
 {
-    /// <summary>Cle publique (SubjectPublicKeyInfo, base64). Privee : D:/MDP/pureupdate-updater.key.</summary>
+    /// <summary>Cle publique (SubjectPublicKeyInfo, base64). Cle privee : hors depot.</summary>
     public const string PublicKeyBase64 =
         "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEoiUmfLa7pX6lBJkPXmRoZPeu19mdUp4iPJUz1HEGHw5aZMaiC/mNEgJHwvC+jDQxxK5XOwAL9+D8CrBwlmrtlg==";
 
@@ -131,8 +131,7 @@ public sealed class AppUpdater
     /// <summary>Telecharge l'installateur, controle taille + SHA-256, retourne son chemin.</summary>
     public async Task<string> DownloadAsync(UpdateInfo info, IProgress<double>? progress = null, CancellationToken ct = default)
     {
-        var dir = Path.Combine(Path.GetTempPath(), "PureUpdate-update");
-        Directory.CreateDirectory(dir);
+        var dir = Directory.CreateTempSubdirectory("PureUpdate-update-").FullName;
         var path = Path.Combine(dir, $"PureUpdate-Setup-{info.Version}.exe");
         try
         {

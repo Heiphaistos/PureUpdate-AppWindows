@@ -1,4 +1,5 @@
 using PureUpdate.Core.Models;
+using PureUpdate.Core.Services;
 using PureUpdate.Utils;
 
 namespace PureUpdate.Core.Providers;
@@ -143,7 +144,7 @@ public sealed class ScoopManager : CliProviderBase, IUpdateProvider, ISelfManage
             try
             {
                 var (_, exitCode) = await RunWithCodeAsync("powershell.exe",
-                    $"-NoProfile -NonInteractive -Command \"scoop uninstall {item.Id} --purge\"",
+                    $"-NoProfile -NonInteractive -Command \"scoop uninstall {SafeArgs.PackageId(item.Id)} --purge\"",
                     progress, ct);
 
                 if (exitCode == 0) { uninstalled++; Logger.Info($"[Scoop] Désinstallé: {item.Title}"); }

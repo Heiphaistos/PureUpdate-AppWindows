@@ -1,4 +1,5 @@
 using PureUpdate.Core.Models;
+using PureUpdate.Core.Services;
 using PureUpdate.Utils;
 
 namespace PureUpdate.Core.Providers;
@@ -93,6 +94,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
                 string id = item.Id;
                 if (id.Contains('…'))
                     id = await ResolveFullIdAsync(id, ct);
+                SafeArgs.PackageId(id);
 
                 var (output, exitCode) = await RunWithCodeAsync("winget",
                     $"upgrade --id \"{id}\" --silent --include-unknown --accept-package-agreements --accept-source-agreements --disable-interactivity",
@@ -237,6 +239,7 @@ public sealed class WingetManager : CliProviderBase, IUpdateProvider, ISelfManag
             try
             {
                 string id = item.Id.Contains('…') ? await ResolveFullIdAsync(item.Id, ct) : item.Id;
+                SafeArgs.PackageId(id);
                 var (output, exitCode) = await RunWithCodeAsync("winget",
                     $"uninstall --id \"{id}\" --silent --accept-source-agreements --disable-interactivity",
                     progress, ct, ItemTimeout);
