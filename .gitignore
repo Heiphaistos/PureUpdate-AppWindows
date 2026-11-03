@@ -28,3 +28,11 @@ desktop.ini
 # Temp
 *.tmp
 *.temp
+
+# Secrets, logs, IDE
+.env
+.env.*
+!.env.example
+*.pfx
+*.log
+.idea/
