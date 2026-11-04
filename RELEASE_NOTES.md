@@ -2,6 +2,14 @@
 
 ---
 
+## v1.11.0 — 2026-11-04
+
+### Nouveautés
+- **Fermeture pendant une installation** : la croix, Alt+F4 ou « Quitter » (zone de notification) pendant une installation (winget, Chocolatey, Scoop, Windows Update, désinstallation, SDI/pilotes, point de restauration) affiche « Installation en cours » avec « Fermer quand même » / « Attendre » (par défaut). « Fermer quand même » masque PureUpdate, qui se ferme seul à la fin de la dernière installation : une installation n'est jamais coupée.
+- La mise à jour automatique de PureUpdate attend aussi la fin des désinstallations et de SDI.
+
+---
+
 ## v1.9.0 — 2026-10-15
 
 ### Nouveautés

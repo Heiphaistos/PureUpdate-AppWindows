@@ -101,6 +101,7 @@ public partial class ProviderUninstallTabViewModel : ObservableObject
     {
         var selected = AllItems.Where(i => i.IsSelected).Select(i => i.Source).ToList();
         if (selected.Count == 0) return;
+        using var op = Core.Services.InstallTracker.Begin($"La désinstallation de paquets {Name}");
 
         _cts?.Cancel(); _cts?.Dispose();
         _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);

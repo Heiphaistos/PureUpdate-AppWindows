@@ -81,6 +81,7 @@ public partial class DashboardViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanInstallAll))]
     private async Task InstallAllAsync(CancellationToken ct)
     {
+        using var op = InstallTracker.Begin("L'installation des mises à jour");
         IsInstallingAll = true;
         GlobalStatus    = "Préparation de l'installation...";
 
@@ -126,6 +127,7 @@ public partial class DashboardViewModel : ObservableObject
     private async Task RunSdiAsync(CancellationToken ct = default)
     {
         if (!SdiAvailable) return;
+        using var op = InstallTracker.Begin("L'installation des pilotes (Snappy Driver Installer)");
         SdiStatus = "Lancement de SDI...";
         var p = new Progress<string>(msg => SdiStatus = msg);
         bool ok = await _sdi.RunAsync(p, ct);

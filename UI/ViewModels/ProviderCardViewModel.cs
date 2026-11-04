@@ -119,6 +119,7 @@ public partial class ProviderCardViewModel : ObservableObject
     public async Task InstallAsync(CancellationToken ct = default)
     {
         if (!CanInstall()) return;
+        using var op = InstallTracker.Begin($"L'installation des mises à jour {Name}");
 
         Cancel();
         _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -230,6 +231,7 @@ public partial class ProviderCardViewModel : ObservableObject
     public async Task InstallSelfAsync(CancellationToken ct = default)
     {
         if (_selfManaged is null || !_selfManaged.CanInstallSelf) return;
+        using var op = InstallTracker.Begin($"L'installation de {Name}");
 
         IsManaging = true;
         StatusText = $"Installation de {Name}...";
@@ -251,6 +253,7 @@ public partial class ProviderCardViewModel : ObservableObject
     public async Task UninstallSelfAsync(CancellationToken ct = default)
     {
         if (_selfManaged is null || !_selfManaged.CanUninstallSelf) return;
+        using var op = InstallTracker.Begin($"La désinstallation de {Name}");
 
         IsManaging = true;
         StatusText = $"Désinstallation de {Name}...";

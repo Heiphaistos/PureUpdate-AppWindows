@@ -17,6 +17,7 @@
   <ItemGroup>
     <Compile Include="../../Core/Update/AppUpdater.cs" />
     <Compile Include="../../Core/Services/SafeArgs.cs" />
+    <Compile Include="../../Core/Services/InstallTracker.cs" />
   </ItemGroup>
 
 </Project>

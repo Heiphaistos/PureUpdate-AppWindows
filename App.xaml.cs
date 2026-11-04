@@ -58,8 +58,7 @@ public partial class App : Application
 
             if (!headlessScan)
             {
-                Updates = new UpdateService(() =>
-                    mainWin.DashboardVm is { } d && (d.IsInstallingAll || d.Providers.Any(p => p.IsInstalling)));
+                Updates = new UpdateService(() => InstallTracker.IsBusy);
                 Updates.Start();
             }
 
@@ -130,7 +129,7 @@ public partial class App : Application
         menu.Items.Add(open);
         menu.Items.Add(new Separator());
         var quit = new MenuItem { Header = "Quitter" };
-        quit.Click += (_, _) => { ForceExit = true; Shutdown(); };
+        quit.Click += (_, _) => { if (ConfirmExitDuringInstall()) { ForceExit = true; Shutdown(); } };
         menu.Items.Add(quit);
 
         icon.ContextMenu           = menu;
@@ -141,6 +140,7 @@ public partial class App : Application
     private void ShowMainWindow()
     {
         if (MainWindow is null) return;
+        _exitPending = false;
         MainWindow.Show();
         MainWindow.WindowState = WindowState.Normal;
         MainWindow.Activate();
@@ -155,7 +155,42 @@ public partial class App : Application
             e.Cancel = true;
             win.Hide();
             _trayIcon?.ShowBalloonTip("PureUpdate", "L'application est réduite dans la barre système.", BalloonIcon.Info);
+            return;
         }
+        if (!ConfirmExitDuringInstall()) e.Cancel = true;
+    }
+
+    /// <summary>
+    /// Vrai si l'application peut se fermer tout de suite. Pendant une installation, demande
+    /// confirmation ; « Fermer quand même » masque la fenêtre et quitte à la fin de la
+    /// dernière installation, pour qu'elle ne soit jamais coupée.
+    /// </summary>
+    private bool ConfirmExitDuringInstall()
+    {
+        if (InstallTracker.CurrentName is not { } busy) return true;
+        if (!InstallCloseDialog.Ask(busy, MainWindow)) return false;
+
+        Logger.Info($"[App] Fermeture différée jusqu'à la fin de : {busy}");
+        MainWindow?.Hide();
+        if (!_idleHooked)
+        {
+            _idleHooked = true;
+            InstallTracker.Idle += () => Dispatcher.BeginInvoke(ExitIfIdle);
+        }
+        _exitPending = true;
+        ExitIfIdle();
+        return false;
+    }
+
+    private bool _idleHooked;
+    private bool _exitPending; // remis à faux si l'utilisateur rouvre la fenêtre
+
+    private void ExitIfIdle()
+    {
+        if (!_exitPending || InstallTracker.IsBusy) return;
+        Logger.Info("[App] Installations terminées, fermeture");
+        ForceExit = true;
+        Shutdown();
     }
 
     private void OnUpdatesFound(int count) =>
